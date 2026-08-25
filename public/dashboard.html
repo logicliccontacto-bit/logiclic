@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logiclic — Panel de Control</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+
+  <!-- Page Loader -->
+  <div class="loader-overlay" id="pageLoader">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="dashboard-header">
+    <div class="header-logo-section">
+      <div class="logo">Logiclic</div>
+      <div class="badge-admin">Admin Portal</div>
+    </div>
+    <div class="header-user-section">
+      <span class="user-welcome">Hola, <strong id="adminUsername">Admin</strong></span>
+      <button class="btn btn-logout" id="logoutBtn">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <!-- Container -->
+  <main class="dashboard-container">
+    
+    <!-- Stats Strip -->
+    <section class="stats-strip">
+      <div class="stat-card" style="--sc-color: #1a7fe8;">
+        <div class="stat-value" id="statTotal">0</div>
+        <div class="stat-label">Total Solicitudes</div>
+      </div>
+      <div class="stat-card" style="--sc-color: #e28743;">
+        <div class="stat-value" id="statPending">0</div>
+        <div class="stat-label">Pendientes</div>
+      </div>
+      <div class="stat-card" style="--sc-color: #0ea5e9;">
+        <div class="stat-value" id="statInProcess">0</div>
+        <div class="stat-label">En Proceso</div>
+      </div>
+      <div class="stat-card" style="--sc-color: #10b981;">
+        <div class="stat-value" id="statCompleted">0</div>
+        <div class="stat-label">Completadas</div>
+      </div>
+    </section>
+
+    <!-- Main Content Card -->
+    <div class="main-card">
+      
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="search-wrap">
+          <input type="text" id="searchInput" class="form-input" placeholder="Buscar por nombre, correo, empresa...">
+        </div>
+        <div class="filter-wrap">
+          <select id="statusFilter" class="form-select">
+            <option value="All">Todos los estados</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="En proceso">En proceso</option>
+            <option value="Completado">Completado</option>
+          </select>
+        </div>
+        <div class="actions-wrap">
+          <button class="btn btn-refresh" id="refreshBtn">↻ Actualizar</button>
+          <button class="btn btn-export" id="exportBtn">📥 Exportar CSV</button>
+        </div>
+      </div>
+
+      <!-- Table Wrapper -->
+      <div class="table-wrapper">
+        <table class="data-table" id="requestsTable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Fecha</th>
+              <th>Cliente</th>
+              <th>Email</th>
+              <th>Servicio</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr>
+              <td colspan="7" class="text-center">Cargando solicitudes...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Details Modal -->
+  <div class="modal-overlay" id="detailsModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Detalles de la Solicitud</h3>
+        <button class="modal-close" onclick="closeModal('detailsModal')">&times;</button>
+      </div>
+      <div class="modal-body" id="modalDetailsContent">
+        <!-- Content will be injected dynamically -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('detailsModal')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" id="deleteModal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3>Confirmar Eliminación</h3>
+        <button class="modal-close" onclick="closeModal('deleteModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>¿Estás seguro de que deseas eliminar esta solicitud de forma permanente? Esta acción no se puede deshacer.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('deleteModal')">Cancelar</button>
+        <button class="btn btn-danger" id="confirmDeleteBtn">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>
