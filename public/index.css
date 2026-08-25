@@ -224,6 +224,7 @@ h2{font-family:var(--fh);font-size:clamp(1.9rem,3.5vw,2.9rem);font-weight:800;le
 .tech-pill{
   background:var(--card);border:1px solid var(--border);border-radius:8px;
   padding:0.5rem 1rem;font-size:0.82rem;color:var(--muted);font-weight:500;
+  text-decoration:none;display:inline-block;
   transition:color 0.2s,border-color 0.2s,background 0.2s,box-shadow 0.2s;
 }
 .tech-pill:hover{color:var(--blue2);border-color:var(--border2);background:rgba(14,165,233,0.06);box-shadow:0 0 12px var(--blue-glow)}
