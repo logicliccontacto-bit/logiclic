@@ -723,6 +723,159 @@ window.calcularCotizacion = function () {
   resultDiv.innerHTML = rows;
 };
 
+// Cotización completa: artículo + impuestos si aplica + flete por peso, con descarga en PDF
+var lastFullQuote = null;
+
+window.calcularCotizacionCompleta = function () {
+  var tipo = document.getElementById('pTipo').value.trim();
+  var caract = document.getElementById('pCaracteristicas').value.trim();
+  var talla = document.getElementById('pTalla').value.trim();
+  var cantidad = parseInt(document.getElementById('pCantidad').value, 10);
+  var valorUnitario = parseFloat(document.getElementById('pValor').value);
+  var peso = parseFloat(document.getElementById('pPeso').value);
+  var link = document.getElementById('pLink').value.trim();
+  var resultDiv = document.getElementById('fullQuoteResult');
+  var downloadBtn = document.getElementById('downloadPdfBtn');
+
+  downloadBtn.style.display = 'none';
+  lastFullQuote = null;
+
+  if (!tipo || !cantidad || cantidad <= 0 || !valorUnitario || valorUnitario <= 0 || !peso || peso <= 0) {
+    resultDiv.innerHTML = '<p style="color:var(--muted);font-size:0.85rem">Completa tipo de artículo, cantidad, valor por unidad y peso del paquete.</p>';
+    return;
+  }
+  if (cantidad > 5) {
+    resultDiv.innerHTML = '<p style="color:#f43f5e;font-size:0.85rem">⚠️ Máximo 5 unidades de la misma referencia por envío. Para mayor cantidad, escríbenos directamente.</p>';
+    return;
+  }
+
+  var subtotalUSD = valorUnitario * cantidad;
+  var aplicaImpuestos = valorUnitario >= 200;
+  var arancelUSD = aplicaImpuestos ? subtotalUSD * 0.10 : 0;
+  var ivaUSD = aplicaImpuestos ? subtotalUSD * 0.19 : 0;
+  var fleteUSD = peso * FREIGHT_RATE_USD;
+  var totalUSD = subtotalUSD + arancelUSD + ivaUSD + fleteUSD;
+  var totalCOP = currentTRM ? totalUSD * currentTRM : null;
+
+  var detalle = escapeHtml(tipo);
+  if (caract) detalle += ' · ' + escapeHtml(caract);
+  if (talla) detalle += ' · Talla ' + escapeHtml(talla);
+
+  var rows = '';
+  rows += '<div class="calc-result-row"><span>Artículo</span><strong>' + detalle + '</strong></div>';
+  rows += '<div class="calc-result-row"><span>Subtotal (' + cantidad + ' x $' + valorUnitario.toFixed(2) + ')</span><strong>USD $' + subtotalUSD.toFixed(2) + '</strong></div>';
+  if (aplicaImpuestos) {
+    rows += '<div class="calc-result-row"><span>Arancel (10%)</span><strong>USD $' + arancelUSD.toFixed(2) + '</strong></div>';
+    rows += '<div class="calc-result-row"><span>IVA Colombia (19%)</span><strong>USD $' + ivaUSD.toFixed(2) + '</strong></div>';
+  } else {
+    rows += '<div class="calc-result-row"><span>Impuestos</span><strong>No aplica (valor unitario &lt; USD $200)</strong></div>';
+  }
+  rows += '<div class="calc-result-row"><span>Flete (' + peso + ' lb x $' + FREIGHT_RATE_USD + ')</span><strong>USD $' + fleteUSD.toFixed(2) + '</strong></div>';
+  rows += '<div class="calc-result-row total"><span>Total estimado</span><strong>USD $' + totalUSD.toFixed(2) + '</strong></div>';
+  if (totalCOP) {
+    rows += '<div class="calc-result-row total"><span>Equivalente en COP</span><strong>' + formatCOP(totalCOP) + '</strong></div>';
+  }
+  resultDiv.innerHTML = rows;
+
+  lastFullQuote = {
+    tipo: tipo, caract: caract, talla: talla, cantidad: cantidad,
+    valorUnitario: valorUnitario, peso: peso, link: link,
+    subtotalUSD: subtotalUSD, aplicaImpuestos: aplicaImpuestos,
+    arancelUSD: arancelUSD, ivaUSD: ivaUSD, fleteUSD: fleteUSD,
+    totalUSD: totalUSD, totalCOP: totalCOP, trm: currentTRM
+  };
+  downloadBtn.style.display = 'block';
+};
+
+window.descargarCotizacionPDF = function () {
+  if (!lastFullQuote || !window.jspdf || !window.jspdf.jsPDF) {
+    showToast('No se pudo generar el PDF. Vuelve a calcular la cotización.', 'error');
+    return;
+  }
+  var q = lastFullQuote;
+  var doc = new window.jspdf.jsPDF();
+  var y = 20;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(20);
+  doc.setTextColor(26, 127, 232);
+  doc.text('Logiclic', 15, y);
+  doc.setFontSize(11);
+  doc.setTextColor(90, 90, 90);
+  doc.setFont('helvetica', 'normal');
+  y += 7;
+  doc.text('Cotización de compra internacional', 15, y);
+  y += 6;
+  doc.text('Fecha: ' + new Date().toLocaleDateString('es-CO'), 15, y);
+  y += 12;
+
+  doc.setDrawColor(220, 220, 220);
+  doc.line(15, y, 195, y);
+  y += 10;
+
+  doc.setFontSize(12);
+  doc.setTextColor(20, 20, 20);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Artículo', 15, y);
+  doc.setFont('helvetica', 'normal');
+  var detalleTxt = q.tipo + (q.caract ? ' - ' + q.caract : '') + (q.talla ? ' - Talla ' + q.talla : '');
+  doc.text(doc.splitTextToSize(detalleTxt, 130), 70, y);
+  y += 10;
+
+  if (q.link) {
+    doc.setFont('helvetica', 'bold');
+    doc.text('Referencia', 15, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(26, 127, 232);
+    doc.textWithLink(doc.splitTextToSize(q.link, 130)[0], 70, y, { url: q.link });
+    doc.setTextColor(20, 20, 20);
+    y += 10;
+  }
+
+  var line = function (label, value) {
+    doc.setFont('helvetica', 'bold');
+    doc.text(label, 15, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(value, 70, y);
+    y += 8;
+  };
+
+  line('Cantidad', String(q.cantidad));
+  line('Valor por unidad', 'USD $' + q.valorUnitario.toFixed(2));
+  line('Subtotal', 'USD $' + q.subtotalUSD.toFixed(2));
+  line('Arancel (10%)', q.aplicaImpuestos ? 'USD $' + q.arancelUSD.toFixed(2) : 'No aplica');
+  line('IVA Colombia (19%)', q.aplicaImpuestos ? 'USD $' + q.ivaUSD.toFixed(2) : 'No aplica');
+  line('Flete (' + q.peso + ' lb x USD $' + FREIGHT_RATE_USD + ')', 'USD $' + q.fleteUSD.toFixed(2));
+
+  y += 2;
+  doc.setDrawColor(220, 220, 220);
+  doc.line(15, y, 195, y);
+  y += 10;
+
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(26, 127, 232);
+  doc.text('Total estimado: USD $' + q.totalUSD.toFixed(2), 15, y);
+  y += 8;
+  if (q.totalCOP) {
+    doc.text('Equivalente en COP: ' + formatCOP(q.totalCOP), 15, y);
+    y += 8;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(120, 120, 120);
+    doc.text('TRM del día usada: $' + Math.round(q.trm).toLocaleString('es-CO') + ' COP (incluye recargo de manejo)', 15, y);
+    y += 10;
+  }
+
+  doc.setFontSize(9);
+  doc.setTextColor(140, 140, 140);
+  doc.text('Cotización de referencia, sujeta a confirmación final según el peso y valor reales del artículo.', 15, y);
+  y += 6;
+  doc.text('Máximo 5 unidades de la misma referencia por envío. Contacto: 321 824 2449 · WhatsApp.', 15, y);
+
+  doc.save('cotizacion-logiclic-' + Date.now() + '.pdf');
+};
+
 window.calcularAhorro = function() {
   var libras = parseFloat(document.getElementById('calc-libras').value);
   var precioActual = parseFloat(document.getElementById('calc-precio').value);
