@@ -671,77 +671,26 @@ window.calcularFlete = function () {
   resultDiv.innerHTML = html;
 };
 
-// Quote calculator: valor del artículo + aranceles/IVA si aplica (no incluye flete)
+// Quote calculator: artículo + impuestos si aplica + flete por peso — alimenta el PDF
+var lastFullQuote = null;
+
 window.calcularCotizacion = function () {
   var tipo = document.getElementById('qTipo').value.trim();
   var caract = document.getElementById('qCaracteristicas').value.trim();
   var talla = document.getElementById('qTalla').value.trim();
   var cantidad = parseInt(document.getElementById('qCantidad').value, 10);
-  var link = document.getElementById('qLink').value.trim();
   var valorUnitario = parseFloat(document.getElementById('qValor').value);
+  var peso = parseFloat(document.getElementById('qPeso').value);
+  var link = document.getElementById('qLink').value.trim();
   var resultDiv = document.getElementById('quoteResult');
-
-  if (!tipo || !cantidad || cantidad <= 0 || !valorUnitario || valorUnitario <= 0) {
-    resultDiv.innerHTML = '<p style="color:var(--muted);font-size:0.85rem">Completa al menos el tipo de artículo, la cantidad y el valor por unidad en USD.</p>';
-    return;
-  }
-  if (cantidad > 5) {
-    resultDiv.innerHTML = '<p style="color:#f43f5e;font-size:0.85rem">⚠️ Máximo 5 unidades de la misma referencia por envío. Para mayor cantidad, escríbenos directamente.</p>';
-    return;
-  }
-
-  var subtotalUSD = valorUnitario * cantidad;
-  var aplicaImpuestos = valorUnitario >= 200;
-  var arancelUSD = aplicaImpuestos ? subtotalUSD * 0.10 : 0;
-  var ivaUSD = aplicaImpuestos ? subtotalUSD * 0.19 : 0;
-  var totalUSD = subtotalUSD + arancelUSD + ivaUSD;
-
-  var detalle = escapeHtml(tipo);
-  if (caract) detalle += ' · ' + escapeHtml(caract);
-  if (talla) detalle += ' · Talla ' + escapeHtml(talla);
-
-  var rows = '';
-  rows += '<div class="calc-result-row"><span>Artículo</span><strong>' + detalle + '</strong></div>';
-  rows += '<div class="calc-result-row"><span>Subtotal (' + cantidad + ' x $' + valorUnitario.toFixed(2) + ')</span><strong>USD $' + subtotalUSD.toFixed(2) + '</strong></div>';
-  if (aplicaImpuestos) {
-    rows += '<div class="calc-result-row"><span>Arancel (10%)</span><strong>USD $' + arancelUSD.toFixed(2) + '</strong></div>';
-    rows += '<div class="calc-result-row"><span>IVA Colombia (19%)</span><strong>USD $' + ivaUSD.toFixed(2) + '</strong></div>';
-  } else {
-    rows += '<div class="calc-result-row"><span>Impuestos</span><strong>No aplica (valor unitario &lt; USD $200)</strong></div>';
-  }
-  rows += '<div class="calc-result-row total"><span>Total estimado</span><strong>USD $' + totalUSD.toFixed(2) + '</strong></div>';
-  if (currentTRM) {
-    rows += '<div class="calc-result-row total"><span>Equivalente en COP</span><strong>' + formatCOP(totalUSD * currentTRM) + '</strong></div>';
-  }
-
-  var linkHtml = 'no indicado';
-  if (link && /^https?:\/\//i.test(link)) {
-    linkHtml = '<a href="' + escapeHtml(link) + '" target="_blank" rel="noopener noreferrer" style="color:var(--blue2)">ver artículo ↗</a>';
-  }
-  rows += '<p style="color:var(--muted);font-size:0.78rem;margin-top:0.8rem">* No incluye flete (usa la calculadora de flete según el peso real) · Referencia: ' + linkHtml + '</p>';
-
-  resultDiv.innerHTML = rows;
-};
-
-// Cotización completa: artículo + impuestos si aplica + flete por peso, con descarga en PDF
-var lastFullQuote = null;
-
-window.calcularCotizacionCompleta = function () {
-  var tipo = document.getElementById('pTipo').value.trim();
-  var caract = document.getElementById('pCaracteristicas').value.trim();
-  var talla = document.getElementById('pTalla').value.trim();
-  var cantidad = parseInt(document.getElementById('pCantidad').value, 10);
-  var valorUnitario = parseFloat(document.getElementById('pValor').value);
-  var peso = parseFloat(document.getElementById('pPeso').value);
-  var link = document.getElementById('pLink').value.trim();
-  var resultDiv = document.getElementById('fullQuoteResult');
+  var fullResultDiv = document.getElementById('fullQuoteResult');
   var downloadBtn = document.getElementById('downloadPdfBtn');
 
   downloadBtn.style.display = 'none';
   lastFullQuote = null;
 
   if (!tipo || !cantidad || cantidad <= 0 || !valorUnitario || valorUnitario <= 0 || !peso || peso <= 0) {
-    resultDiv.innerHTML = '<p style="color:var(--muted);font-size:0.85rem">Completa tipo de artículo, cantidad, valor por unidad y peso del paquete.</p>';
+    resultDiv.innerHTML = '<p style="color:var(--muted);font-size:0.85rem">Completa al menos el tipo de artículo, la cantidad, el valor por unidad y el peso del paquete.</p>';
     return;
   }
   if (cantidad > 5) {
@@ -775,7 +724,15 @@ window.calcularCotizacionCompleta = function () {
   if (totalCOP) {
     rows += '<div class="calc-result-row total"><span>Equivalente en COP</span><strong>' + formatCOP(totalCOP) + '</strong></div>';
   }
+
+  var linkHtml = 'no indicado';
+  if (link && /^https?:\/\//i.test(link)) {
+    linkHtml = '<a href="' + escapeHtml(link) + '" target="_blank" rel="noopener noreferrer" style="color:var(--blue2)">ver artículo ↗</a>';
+  }
+  rows += '<p style="color:var(--muted);font-size:0.78rem;margin-top:0.8rem">Referencia: ' + linkHtml + '</p>';
+
   resultDiv.innerHTML = rows;
+  fullResultDiv.innerHTML = rows;
 
   lastFullQuote = {
     tipo: tipo, caract: caract, talla: talla, cantidad: cantidad,

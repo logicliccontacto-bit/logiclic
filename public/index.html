@@ -203,9 +203,15 @@
           <input type="number" id="qValor" min="0" step="0.01" placeholder="Ej: 89.99">
         </div>
       </div>
-      <div class="field">
-        <label for="qLink">Link donde viste el artículo</label>
-        <input type="url" id="qLink" placeholder="https://...">
+      <div class="form-row">
+        <div class="field">
+          <label for="qPeso">Peso del paquete (libras)</label>
+          <input type="number" id="qPeso" min="0" step="0.1" placeholder="Ej: 3.5">
+        </div>
+        <div class="field">
+          <label for="qLink">Link donde viste el artículo</label>
+          <input type="url" id="qLink" placeholder="https://...">
+        </div>
       </div>
       <button type="button" class="btn-secondary" onclick="calcularCotizacion()">Calcular cotización</button>
       <div class="calculator-result" id="quoteResult"></div>
@@ -214,44 +220,11 @@
 
   <div class="calculator-card quote-full">
     <h3>🧾 Cotización Completa + PDF</h3>
-    <p>Une el valor del artículo, los impuestos si aplican y el flete por peso en un solo total, y descárgalo en PDF.</p>
-    <div class="field">
-      <label for="pTipo">Tipo de artículo</label>
-      <input type="text" id="pTipo" placeholder="Ej: Tenis, ropa, electrónico...">
+    <p>Calcula tu cotización en el cuadro de arriba (ya incluye artículo, impuestos si aplican y flete por peso) y descárgala en PDF, lista para compartir.</p>
+    <div class="calculator-result" id="fullQuoteResult">
+      <p style="color:var(--muted);font-size:0.85rem">Aún no has calculado una cotización. Completa la Calculadora de Cotización arriba.</p>
     </div>
-    <div class="form-row">
-      <div class="field">
-        <label for="pCaracteristicas">Características</label>
-        <input type="text" id="pCaracteristicas" placeholder="Color, modelo, material...">
-      </div>
-      <div class="field">
-        <label for="pTalla">Talla</label>
-        <input type="text" id="pTalla" placeholder="Ej: M, 42, Única">
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="field">
-        <label for="pCantidad">Cantidad</label>
-        <input type="number" id="pCantidad" min="1" max="5" value="1">
-      </div>
-      <div class="field">
-        <label for="pValor">Valor por unidad (USD)</label>
-        <input type="number" id="pValor" min="0" step="0.01" placeholder="Ej: 89.99">
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="field">
-        <label for="pPeso">Peso total del paquete (libras)</label>
-        <input type="number" id="pPeso" min="0" step="0.1" placeholder="Ej: 3.5">
-      </div>
-      <div class="field">
-        <label for="pLink">Link donde viste el artículo</label>
-        <input type="url" id="pLink" placeholder="https://...">
-      </div>
-    </div>
-    <button type="button" class="btn-primary" onclick="calcularCotizacionCompleta()">Calcular cotización completa</button>
-    <div class="calculator-result" id="fullQuoteResult"></div>
-    <button type="button" class="btn-secondary" id="downloadPdfBtn" style="display:none;margin-top:1rem" onclick="descargarCotizacionPDF()">📄 Descargar cotización en PDF</button>
+    <button type="button" class="btn-primary" id="downloadPdfBtn" style="display:none" onclick="descargarCotizacionPDF()">📄 Descargar cotización en PDF</button>
   </div>
 
   <div class="process-steps">
