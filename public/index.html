@@ -15,6 +15,7 @@
 <!-- TOPBAR -->
 <div class="topbar">
   <div class="topbar-contact">
+    <span class="trm-badge">💵 TRM hoy: <span id="trmValue">cargando...</span></span>
     <a href="tel:3218242449">📞 321 824 2449</a>
     <a href="https://wa.me/573218242449" target="_blank">💬 WhatsApp</a>
     <a href="mailto:carlosandres.leguizamonq@gmail.com" class="hide-tablet">✉️ carlosandres.leguizamonq@gmail.com</a>
@@ -149,6 +150,65 @@
     <a href="https://www.walmart.com" target="_blank" rel="noopener noreferrer" class="tech-pill">Walmart</a>
     <a href="https://www.bestbuy.com" target="_blank" rel="noopener noreferrer" class="tech-pill">Best Buy</a>
     <a href="https://www.apple.com/shop" target="_blank" rel="noopener noreferrer" class="tech-pill">Apple Store</a>
+  </div>
+
+  <div class="rules-notice">
+    <div class="rules-icon">📋</div>
+    <div>
+      <h4>Antes de comprar, ten en cuenta</h4>
+      <ul>
+        <li><strong>Máximo 5 unidades</strong> de la misma referencia por envío — a partir de 6 se considera importación comercial y cambia la normativa aplicable.</li>
+        <li>Si el valor del artículo es <strong>igual o mayor a USD $200</strong>, aplica <strong>10% de arancel + 19% de IVA</strong> sobre ese valor, según normativa aduanera colombiana.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="calculators-grid">
+    <div class="calculator-card">
+      <h3>📦 Calculadora de Flete</h3>
+      <p>El flete se cobra por peso físico real, a <strong>USD $5 por libra</strong>.</p>
+      <div class="field">
+        <label for="freightWeight">Peso del paquete (libras)</label>
+        <input type="number" id="freightWeight" min="0" step="0.1" placeholder="Ej: 3.5">
+      </div>
+      <button type="button" class="btn-secondary" onclick="calcularFlete()">Calcular flete</button>
+      <div class="calculator-result" id="freightResult"></div>
+    </div>
+
+    <div class="calculator-card">
+      <h3>🧮 Calculadora de Cotización</h3>
+      <p>Cuéntanos qué quieres traer y te damos un estimado al instante.</p>
+      <div class="field">
+        <label for="qTipo">Tipo de artículo</label>
+        <input type="text" id="qTipo" placeholder="Ej: Tenis, ropa, electrónico...">
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="qCaracteristicas">Características</label>
+          <input type="text" id="qCaracteristicas" placeholder="Color, modelo, material...">
+        </div>
+        <div class="field">
+          <label for="qTalla">Talla</label>
+          <input type="text" id="qTalla" placeholder="Ej: M, 42, Única">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="qCantidad">Cantidad</label>
+          <input type="number" id="qCantidad" min="1" max="5" value="1">
+        </div>
+        <div class="field">
+          <label for="qValor">Valor por unidad (USD)</label>
+          <input type="number" id="qValor" min="0" step="0.01" placeholder="Ej: 89.99">
+        </div>
+      </div>
+      <div class="field">
+        <label for="qLink">Link donde viste el artículo</label>
+        <input type="url" id="qLink" placeholder="https://...">
+      </div>
+      <button type="button" class="btn-secondary" onclick="calcularCotizacion()">Calcular cotización</button>
+      <div class="calculator-result" id="quoteResult"></div>
+    </div>
   </div>
 
   <div class="process-steps">

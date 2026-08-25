@@ -628,6 +628,101 @@ function formatCOP(n) {
   return '$' + Math.round(n).toLocaleString('es-CO') + ' COP';
 }
 
+// TRM del día (+ recargo de manejo) — usada en el encabezado y las calculadoras
+var currentTRM = null;
+fetch('/api/trm')
+  .then(function (res) { return res.json(); })
+  .then(function (data) {
+    currentTRM = data.valor;
+    var el = document.getElementById('trmValue');
+    if (el) el.textContent = '$' + currentTRM.toLocaleString('es-CO') + ' COP';
+  })
+  .catch(function (err) {
+    var el = document.getElementById('trmValue');
+    if (el) el.textContent = 'No disponible';
+    console.error('Error obteniendo TRM:', err);
+  });
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, function (m) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+  });
+}
+
+// Freight calculator: peso físico real, USD $5 por libra
+var FREIGHT_RATE_USD = 5;
+window.calcularFlete = function () {
+  var peso = parseFloat(document.getElementById('freightWeight').value);
+  var resultDiv = document.getElementById('freightResult');
+
+  if (!peso || peso <= 0) {
+    resultDiv.innerHTML = '<p style="color:var(--muted);font-size:0.85rem">Ingresa un peso válido en libras.</p>';
+    return;
+  }
+
+  var totalUSD = peso * FREIGHT_RATE_USD;
+  var html =
+    '<div class="calc-result-row"><span>Peso</span><strong>' + peso + ' lb</strong></div>' +
+    '<div class="calc-result-row"><span>Tarifa</span><strong>USD $' + FREIGHT_RATE_USD + '/lb</strong></div>' +
+    '<div class="calc-result-row total"><span>Total flete</span><strong>USD $' + totalUSD.toFixed(2) + '</strong></div>';
+  if (currentTRM) {
+    html += '<div class="calc-result-row total"><span>Equivalente en COP</span><strong>' + formatCOP(totalUSD * currentTRM) + '</strong></div>';
+  }
+  resultDiv.innerHTML = html;
+};
+
+// Quote calculator: valor del artículo + aranceles/IVA si aplica (no incluye flete)
+window.calcularCotizacion = function () {
+  var tipo = document.getElementById('qTipo').value.trim();
+  var caract = document.getElementById('qCaracteristicas').value.trim();
+  var talla = document.getElementById('qTalla').value.trim();
+  var cantidad = parseInt(document.getElementById('qCantidad').value, 10);
+  var link = document.getElementById('qLink').value.trim();
+  var valorUnitario = parseFloat(document.getElementById('qValor').value);
+  var resultDiv = document.getElementById('quoteResult');
+
+  if (!tipo || !cantidad || cantidad <= 0 || !valorUnitario || valorUnitario <= 0) {
+    resultDiv.innerHTML = '<p style="color:var(--muted);font-size:0.85rem">Completa al menos el tipo de artículo, la cantidad y el valor por unidad en USD.</p>';
+    return;
+  }
+  if (cantidad > 5) {
+    resultDiv.innerHTML = '<p style="color:#f43f5e;font-size:0.85rem">⚠️ Máximo 5 unidades de la misma referencia por envío. Para mayor cantidad, escríbenos directamente.</p>';
+    return;
+  }
+
+  var subtotalUSD = valorUnitario * cantidad;
+  var aplicaImpuestos = valorUnitario >= 200;
+  var arancelUSD = aplicaImpuestos ? subtotalUSD * 0.10 : 0;
+  var ivaUSD = aplicaImpuestos ? subtotalUSD * 0.19 : 0;
+  var totalUSD = subtotalUSD + arancelUSD + ivaUSD;
+
+  var detalle = escapeHtml(tipo);
+  if (caract) detalle += ' · ' + escapeHtml(caract);
+  if (talla) detalle += ' · Talla ' + escapeHtml(talla);
+
+  var rows = '';
+  rows += '<div class="calc-result-row"><span>Artículo</span><strong>' + detalle + '</strong></div>';
+  rows += '<div class="calc-result-row"><span>Subtotal (' + cantidad + ' x $' + valorUnitario.toFixed(2) + ')</span><strong>USD $' + subtotalUSD.toFixed(2) + '</strong></div>';
+  if (aplicaImpuestos) {
+    rows += '<div class="calc-result-row"><span>Arancel (10%)</span><strong>USD $' + arancelUSD.toFixed(2) + '</strong></div>';
+    rows += '<div class="calc-result-row"><span>IVA Colombia (19%)</span><strong>USD $' + ivaUSD.toFixed(2) + '</strong></div>';
+  } else {
+    rows += '<div class="calc-result-row"><span>Impuestos</span><strong>No aplica (valor unitario &lt; USD $200)</strong></div>';
+  }
+  rows += '<div class="calc-result-row total"><span>Total estimado</span><strong>USD $' + totalUSD.toFixed(2) + '</strong></div>';
+  if (currentTRM) {
+    rows += '<div class="calc-result-row total"><span>Equivalente en COP</span><strong>' + formatCOP(totalUSD * currentTRM) + '</strong></div>';
+  }
+
+  var linkHtml = 'no indicado';
+  if (link && /^https?:\/\//i.test(link)) {
+    linkHtml = '<a href="' + escapeHtml(link) + '" target="_blank" rel="noopener noreferrer" style="color:var(--blue2)">ver artículo ↗</a>';
+  }
+  rows += '<p style="color:var(--muted);font-size:0.78rem;margin-top:0.8rem">* No incluye flete (usa la calculadora de flete según el peso real) · Referencia: ' + linkHtml + '</p>';
+
+  resultDiv.innerHTML = rows;
+};
+
 window.calcularAhorro = function() {
   var libras = parseFloat(document.getElementById('calc-libras').value);
   var precioActual = parseFloat(document.getElementById('calc-precio').value);

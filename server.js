@@ -44,7 +44,44 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static frontend files from 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 
+// === TRM (Tasa Representativa del Mercado) ===
+const TRM_FALLBACK = 4050; // Actualizar manualmente si la fuente oficial falla por mucho tiempo
+const TRM_CACHE_MS = 6 * 60 * 60 * 1000; // 6 horas
+const TRM_MANEJO = 500; // Recargo fijo de manejo en COP
+let trmCache = { valor: null, fetchedAt: 0 };
+
+async function getTRM() {
+  const now = Date.now();
+  if (trmCache.valor && (now - trmCache.fetchedAt) < TRM_CACHE_MS) {
+    return trmCache.valor;
+  }
+  try {
+    const response = await fetch(
+      'https://www.datos.gov.co/resource/32sa-8pi3.json?$order=vigenciadesde%20DESC&$limit=1'
+    );
+    const data = await response.json();
+    const valor = parseFloat(data[0]?.valor);
+    if (!isNaN(valor) && valor > 0) {
+      trmCache = { valor, fetchedAt: now };
+      return valor;
+    }
+  } catch (err) {
+    console.error('Error fetching TRM:', err.message);
+  }
+  return trmCache.valor || TRM_FALLBACK;
+}
+
 // === API ENDPOINTS ===
+
+// 0. Get today's TRM + handling fee (only the final value is exposed)
+app.get('/api/trm', async (req, res) => {
+  try {
+    const trm = await getTRM();
+    res.json({ valor: Math.round(trm + TRM_MANEJO) });
+  } catch (err) {
+    res.json({ valor: Math.round(TRM_FALLBACK + TRM_MANEJO) });
+  }
+});
 
 // 1. Submit contact request
 app.post('/api/contact', async (req, res) => {
