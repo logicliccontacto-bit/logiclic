@@ -219,8 +219,8 @@ h2{font-family:var(--fh);font-size:clamp(1.9rem,3.5vw,2.9rem);font-weight:800;le
 .rules-notice li{color:var(--muted);font-size:0.88rem;line-height:1.5}
 .rules-notice li strong{color:var(--blue2)}
 
-/* ── SHOP USA CALCULATORS ── */
-.calculators-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;margin-bottom:3.5rem}
+/* ── SHOP USA CALCULATOR + PDF ── */
+.quote-flow{display:flex;flex-direction:column;gap:1.5rem;max-width:640px;margin:0 auto 3.5rem}
 .calculator-card{
   background:var(--card);border:1px solid var(--border);border-radius:16px;
   padding:1.8rem;text-align:left;
@@ -230,7 +230,6 @@ h2{font-family:var(--fh);font-size:clamp(1.9rem,3.5vw,2.9rem);font-weight:800;le
 .calculator-card .field{margin-bottom:1rem}
 .calculator-card .form-row{margin-bottom:0;gap:1rem}
 .calculator-card .btn-secondary{width:100%;text-align:center;padding:0.85rem 1.5rem}
-.calculator-card.quote-full{max-width:900px;margin:0 auto 3.5rem}
 .calculator-card.quote-full .btn-primary{width:100%;text-align:center;border:none}
 
 /* ── PROCESS ── */

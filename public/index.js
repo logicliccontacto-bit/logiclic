@@ -649,27 +649,8 @@ function escapeHtml(str) {
   });
 }
 
-// Freight calculator: peso físico real, USD $5 por libra
+// Tarifa de flete por peso físico, usada en la Calculadora de Cotización
 var FREIGHT_RATE_USD = 5;
-window.calcularFlete = function () {
-  var peso = parseFloat(document.getElementById('freightWeight').value);
-  var resultDiv = document.getElementById('freightResult');
-
-  if (!peso || peso <= 0) {
-    resultDiv.innerHTML = '<p style="color:var(--muted);font-size:0.85rem">Ingresa un peso válido en libras.</p>';
-    return;
-  }
-
-  var totalUSD = peso * FREIGHT_RATE_USD;
-  var html =
-    '<div class="calc-result-row"><span>Peso</span><strong>' + peso + ' lb</strong></div>' +
-    '<div class="calc-result-row"><span>Tarifa</span><strong>USD $' + FREIGHT_RATE_USD + '/lb</strong></div>' +
-    '<div class="calc-result-row total"><span>Total flete</span><strong>USD $' + totalUSD.toFixed(2) + '</strong></div>';
-  if (currentTRM) {
-    html += '<div class="calc-result-row total"><span>Equivalente en COP</span><strong>' + formatCOP(totalUSD * currentTRM) + '</strong></div>';
-  }
-  resultDiv.innerHTML = html;
-};
 
 // Quote calculator: artículo + impuestos si aplica + flete por peso — alimenta el PDF
 var lastFullQuote = null;
@@ -744,6 +725,25 @@ window.calcularCotizacion = function () {
   downloadBtn.style.display = 'block';
 };
 
+// Recorta el ícono del logo ya cargado en la página (evita duplicar la imagen)
+function getLogoIconDataUrl() {
+  try {
+    var imgEl = document.querySelector('.logo-nav img');
+    if (!imgEl || !imgEl.complete || !imgEl.naturalWidth) return null;
+    var cropW = Math.round(imgEl.naturalWidth * 0.2987);
+    var cropH = Math.round(imgEl.naturalHeight * 0.7566);
+    var canvas = document.createElement('canvas');
+    canvas.width = cropW;
+    canvas.height = cropH;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(imgEl, 0, 0, cropW, cropH, 0, 0, cropW, cropH);
+    return canvas.toDataURL('image/png');
+  } catch (e) {
+    console.error('No se pudo recortar el logo para el PDF:', e);
+    return null;
+  }
+}
+
 window.descargarCotizacionPDF = function () {
   if (!lastFullQuote || !window.jspdf || !window.jspdf.jsPDF) {
     showToast('No se pudo generar el PDF. Vuelve a calcular la cotización.', 'error');
@@ -752,18 +752,25 @@ window.descargarCotizacionPDF = function () {
   var q = lastFullQuote;
   var doc = new window.jspdf.jsPDF();
   var y = 20;
+  var textX = 15;
+
+  var logoDataUrl = getLogoIconDataUrl();
+  if (logoDataUrl) {
+    doc.addImage(logoDataUrl, 'PNG', 15, 10, 14, 14);
+    textX = 32;
+  }
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(20);
   doc.setTextColor(26, 127, 232);
-  doc.text('Logiclic', 15, y);
+  doc.text('Logiclic', textX, y);
   doc.setFontSize(11);
   doc.setTextColor(90, 90, 90);
   doc.setFont('helvetica', 'normal');
   y += 7;
-  doc.text('Cotización de compra internacional', 15, y);
+  doc.text('Cotización de Compra · Casillero Internacional', textX, y);
   y += 6;
-  doc.text('Fecha: ' + new Date().toLocaleDateString('es-CO'), 15, y);
+  doc.text('Fecha: ' + new Date().toLocaleDateString('es-CO'), textX, y);
   y += 12;
 
   doc.setDrawColor(220, 220, 220);
@@ -823,6 +830,22 @@ window.descargarCotizacionPDF = function () {
     doc.text('TRM del día usada: $' + Math.round(q.trm).toLocaleString('es-CO') + ' COP (incluye recargo de manejo)', 15, y);
     y += 10;
   }
+
+  y += 2;
+  doc.setFillColor(235, 244, 253);
+  doc.rect(15, y, 180, 20, 'F');
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(26, 127, 232);
+  doc.text('Importante:', 18, y + 6);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(60, 60, 60);
+  doc.text(doc.splitTextToSize(
+    'Este valor en pesos es un estimado. El dólar (TRM) cambia todos los días, así que el precio final en COP puede ' +
+    'variar un poco el día en que se confirme y pague tu pedido. El valor en USD sí se mantiene fijo.',
+    174
+  ), 18, y + 11);
+  y += 26;
 
   doc.setFontSize(9);
   doc.setTextColor(140, 140, 140);

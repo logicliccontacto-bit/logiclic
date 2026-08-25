@@ -164,21 +164,10 @@
     </div>
   </div>
 
-  <div class="calculators-grid">
-    <div class="calculator-card">
-      <h3>📦 Calculadora de Flete</h3>
-      <p>El flete se cobra por peso físico real, a <strong>USD $5 por libra</strong>.</p>
-      <div class="field">
-        <label for="freightWeight">Peso del paquete (libras)</label>
-        <input type="number" id="freightWeight" min="0" step="0.1" placeholder="Ej: 3.5">
-      </div>
-      <button type="button" class="btn-secondary" onclick="calcularFlete()">Calcular flete</button>
-      <div class="calculator-result" id="freightResult"></div>
-    </div>
-
+  <div class="quote-flow">
     <div class="calculator-card">
       <h3>🧮 Calculadora de Cotización</h3>
-      <p>Cuéntanos qué quieres traer y te damos un estimado al instante.</p>
+      <p>Cuéntanos qué quieres traer (artículo, impuestos si aplican y flete por peso, a <strong>USD $5/lb</strong>) y te damos un estimado al instante.</p>
       <div class="field">
         <label for="qTipo">Tipo de artículo</label>
         <input type="text" id="qTipo" placeholder="Ej: Tenis, ropa, electrónico...">
@@ -216,15 +205,15 @@
       <button type="button" class="btn-secondary" onclick="calcularCotizacion()">Calcular cotización</button>
       <div class="calculator-result" id="quoteResult"></div>
     </div>
-  </div>
 
-  <div class="calculator-card quote-full">
-    <h3>🧾 Cotización Completa + PDF</h3>
-    <p>Calcula tu cotización en el cuadro de arriba (ya incluye artículo, impuestos si aplican y flete por peso) y descárgala en PDF, lista para compartir.</p>
-    <div class="calculator-result" id="fullQuoteResult">
-      <p style="color:var(--muted);font-size:0.85rem">Aún no has calculado una cotización. Completa la Calculadora de Cotización arriba.</p>
+    <div class="calculator-card quote-full">
+      <h3>🧾 Cotización Completa + PDF</h3>
+      <p>Calcula tu cotización arriba y descárgala en PDF, lista para compartir.</p>
+      <div class="calculator-result" id="fullQuoteResult">
+        <p style="color:var(--muted);font-size:0.85rem">Aún no has calculado una cotización. Completa la calculadora de arriba.</p>
+      </div>
+      <button type="button" class="btn-primary" id="downloadPdfBtn" style="display:none" onclick="descargarCotizacionPDF()">📄 Descargar cotización en PDF</button>
     </div>
-    <button type="button" class="btn-primary" id="downloadPdfBtn" style="display:none" onclick="descargarCotizacionPDF()">📄 Descargar cotización en PDF</button>
   </div>
 
   <div class="process-steps">
