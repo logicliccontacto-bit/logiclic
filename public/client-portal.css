@@ -1,0 +1,192 @@
+/* Client portal — reuses index.css brand tokens (--bg, --card, --blue, --text, --muted, fonts) */
+
+body {
+  padding-top: 0;
+  min-height: 100vh;
+}
+
+.portal-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 5%;
+  background: rgba(8, 14, 26, 0.9);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-bottom: 1px solid var(--border);
+}
+
+.portal-logo {
+  font-family: var(--fh);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--blue), var(--blue2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.portal-user-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.portal-welcome {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.portal-welcome strong {
+  color: var(--text);
+}
+
+.portal-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2.5rem 5% 4rem;
+}
+
+/* Casillero summary card */
+.casillero-summary {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.8rem;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem 3rem;
+  align-items: center;
+}
+
+.casillero-summary .codigo-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.casillero-summary .codigo-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--blue2);
+}
+
+.casillero-summary .codigo-value {
+  font-family: var(--fh);
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.casillero-summary .summary-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.casillero-summary .summary-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.casillero-summary .summary-value {
+  font-size: 15px;
+  color: var(--text);
+}
+
+/* Section headings */
+.portal-section h2 {
+  font-family: var(--fh);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 1.2rem;
+}
+
+/* Prealertas table */
+.portal-table-wrap {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 2.5rem;
+}
+
+.portal-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.portal-table th {
+  background: rgba(255, 255, 255, 0.02);
+  padding: 12px 18px;
+  font-family: var(--fh);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--blue2);
+  border-bottom: 1px solid var(--border);
+}
+
+.portal-table td {
+  padding: 14px 18px;
+  font-size: 13.5px;
+  color: var(--text2);
+  border-bottom: 1px solid var(--border);
+}
+
+.portal-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.portal-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.portal-status-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.pstatus-pendiente { background: rgba(226, 135, 67, 0.1); color: #e28743; border-color: rgba(226, 135, 67, 0.25); }
+.pstatus-pendiente::before { background: #e28743; }
+.pstatus-transito { background: rgba(14, 165, 233, 0.1); color: var(--blue2); border-color: var(--border2); }
+.pstatus-transito::before { background: var(--blue2); }
+.pstatus-entregado { background: rgba(16, 185, 129, 0.1); color: #10b981; border-color: rgba(16, 185, 129, 0.25); }
+.pstatus-entregado::before { background: #10b981; }
+.pstatus-aduana { background: rgba(244, 63, 94, 0.1); color: #f43f5e; border-color: rgba(244, 63, 94, 0.25); }
+.pstatus-aduana::before { background: #f43f5e; }
+
+.portal-empty {
+  padding: 2.5rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+@media (max-width: 640px) {
+  .portal-table-wrap { overflow-x: auto; }
+  .portal-table { min-width: 640px; }
+}

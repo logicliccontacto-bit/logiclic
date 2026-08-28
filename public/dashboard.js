@@ -373,7 +373,7 @@ window._pendingDelete = null; // { type, id }
   });
 
   // ── Tabs ──
-  const VALID_TABS = ['contactos', 'casillero-requests', 'casilleros'];
+  const VALID_TABS = ['contactos', 'casillero-requests', 'casilleros', 'prealertas'];
 
   function switchTab(tabName) {
     if (!VALID_TABS.includes(tabName)) tabName = 'contactos';

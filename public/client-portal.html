@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logiclic — Mi Casillero</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+  <link rel="stylesheet" href="client-portal.css">
+</head>
+<body>
+
+  <header class="portal-header">
+    <div class="portal-logo">Logiclic</div>
+    <div class="portal-user-section">
+      <span class="portal-welcome">Casillero <strong id="portalCodigo">—</strong></span>
+      <button class="btn-secondary" id="logoutBtn">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main class="portal-container">
+
+    <!-- Casillero summary -->
+    <div class="casillero-summary" id="casilleroSummary">
+      <div class="codigo-box">
+        <div class="codigo-label">Tu código</div>
+        <div class="codigo-value" id="summaryCodigo">—</div>
+      </div>
+      <div class="summary-field">
+        <div class="summary-label">Nombre</div>
+        <div class="summary-value" id="summaryNombre">—</div>
+      </div>
+      <div class="summary-field">
+        <div class="summary-label">Ciudad</div>
+        <div class="summary-value" id="summaryCiudad">—</div>
+      </div>
+      <div class="summary-field">
+        <div class="summary-label">Estado</div>
+        <div class="summary-value" id="summaryEstado">—</div>
+      </div>
+    </div>
+
+    <!-- Mis Paquetes -->
+    <section class="portal-section">
+      <h2>Mis Paquetes</h2>
+      <div class="portal-table-wrap">
+        <table class="portal-table" id="paquetesTable">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Tracking</th>
+              <th>Tienda</th>
+              <th>Valor USD</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="paquetesTableBody">
+            <tr><td colspan="5" class="portal-empty">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Nueva Prealerta -->
+    <section class="portal-section">
+      <div class="calculator-card">
+        <h3>📦 Nueva Prealerta</h3>
+        <p>Regístrala apenas hagas la compra, aunque todavía no tengas el número de tracking.</p>
+        <form id="prealertaForm" onsubmit="return false;">
+          <div class="form-row">
+            <div class="field">
+              <label for="paTienda">Tienda</label>
+              <input type="text" id="paTienda" placeholder="Ej: Amazon, Nike, Target..." required>
+            </div>
+            <div class="field">
+              <label for="paTransportadora">Transportadora</label>
+              <select id="paTransportadora" required>
+                <option value="">Selecciona...</option>
+                <option value="UPS">UPS</option>
+                <option value="FedEx">FedEx</option>
+                <option value="USPS">USPS</option>
+                <option value="DHL">DHL</option>
+                <option value="Amazon Logistics">Amazon Logistics</option>
+                <option value="Otra">Otra</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label for="paValor">Valor declarado (USD)</label>
+              <input type="number" id="paValor" min="0" step="0.01" placeholder="Ej: 89.99" required>
+            </div>
+            <div class="field">
+              <label for="paPeso">Peso estimado (libras, opcional)</label>
+              <input type="number" id="paPeso" min="0" step="0.1" placeholder="Ej: 2.5">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label for="paTracking">Número de tracking (opcional)</label>
+              <input type="text" id="paTracking" placeholder="Si aún no lo tienes, déjalo en blanco">
+            </div>
+            <div class="field">
+              <label for="paCiudad">Ciudad de entrega</label>
+              <input type="text" id="paCiudad" placeholder="Ej: Bogotá" required>
+            </div>
+          </div>
+          <div class="field">
+            <label for="paDescripcion">Descripción del producto (opcional)</label>
+            <input type="text" id="paDescripcion" placeholder="Ej: Tenis Nike Air Max, talla 42">
+          </div>
+          <div class="field">
+            <label for="paLink">Link de soporte de compra (opcional)</label>
+            <input type="url" id="paLink" placeholder="https://...">
+          </div>
+          <button type="button" class="btn-primary" style="width:100%; text-align:center; border:none" onclick="enviarPrealerta()">Registrar Prealerta</button>
+          <div class="calculator-result" id="prealertaResult"></div>
+        </form>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="client-portal.js"></script>
+</body>
+</html>

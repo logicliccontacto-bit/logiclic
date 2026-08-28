@@ -86,15 +86,62 @@ function isRateLimited(ip) {
 
 const VALID_TIPOS_DOCUMENTO = ['Cédula', 'Cédula de Extranjería', 'Pasaporte', 'NIT'];
 
-async function casilleroDuplicateExists(numeroDocumento, email) {
+function normalizeName(name) {
+  return String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+async function casilleroDuplicateExists(tipoDocumento, numeroDocumento, email, nombreCompleto) {
+  const normalizedName = normalizeName(nombreCompleto);
   const { rows } = await pool.query(
-    `SELECT 1 FROM casillero_requests WHERE numero_documento = $1 AND status = 'Pendiente'
+    `SELECT 1 FROM casillero_requests
+       WHERE status = 'Pendiente' AND (
+         (tipo_documento = $1 AND numero_documento = $2) OR
+         email = $3 OR
+         lower(regexp_replace(trim(nombre_completo), '\\s+', ' ', 'g')) = $4
+       )
      UNION
-     SELECT 1 FROM casilleros WHERE numero_documento = $1 OR email = $2
+     SELECT 1 FROM casilleros
+       WHERE (tipo_documento = $1 AND numero_documento = $2) OR
+         email = $3 OR
+         lower(regexp_replace(trim(nombre_completo), '\\s+', ' ', 'g')) = $4
      LIMIT 1`,
-    [numeroDocumento, email]
+    [tipoDocumento, numeroDocumento, email, normalizedName]
   );
   return rows.length > 0;
+}
+
+// === Client portal auth (separate namespace from admin sessions/cookies) ===
+const clientSessions = new Map(); // token -> casillero_id
+const clientLoginRateLimit = new Map(); // ip -> timestamps[]
+
+function isClientLoginRateLimited(ip) {
+  const now = Date.now();
+  const timestamps = (clientLoginRateLimit.get(ip) || []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+  timestamps.push(now);
+  clientLoginRateLimit.set(ip, timestamps);
+  return timestamps.length > RATE_LIMIT_MAX;
+}
+
+function getClientSessionToken(req) {
+  const cookieHeader = req.headers.cookie;
+  if (!cookieHeader) return null;
+  const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+    const parts = cookie.split('=');
+    if (parts.length >= 2) {
+      acc[parts[0].trim()] = parts.slice(1).join('=').trim();
+    }
+    return acc;
+  }, {});
+  return cookies['client_session_token'] || null;
+}
+
+function requireClientAuth(req, res, next) {
+  const token = getClientSessionToken(req);
+  if (!token || !clientSessions.has(token)) {
+    return res.status(401).json({ success: false, error: 'Unauthorized' });
+  }
+  req.casilleroId = clientSessions.get(token);
+  next();
 }
 
 // === API ENDPOINTS ===
@@ -258,7 +305,7 @@ app.post('/api/casillero-requests', async (req, res) => {
   }
 
   try {
-    const duplicate = await casilleroDuplicateExists(numero_documento, email);
+    const duplicate = await casilleroDuplicateExists(tipo_documento, numero_documento, email, nombre_completo);
     if (duplicate) {
       return res.status(409).json({ success: false, error: 'Ya existe una solicitud o cuenta asociada a estos datos.' });
     }
@@ -415,7 +462,170 @@ app.delete('/api/admin/casilleros/:id', requireAuth, async (req, res) => {
     }
     res.json({ success: true });
   } catch (err) {
+    if (err.code === '23503') {
+      return res.status(409).json({ success: false, error: 'Este casillero tiene prealertas registradas. Elimínalas primero para poder borrar la cuenta.' });
+    }
     console.error('Error deleting casillero:', err.message);
+    res.status(500).json({ success: false, error: 'Database error' });
+  }
+});
+
+// 16. Client login: email + numero_documento (their own document number) as password
+app.post('/api/client/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ success: false, error: 'Correo y contraseña requeridos.' });
+  }
+
+  if (isClientLoginRateLimited(req.ip)) {
+    return res.status(429).json({ success: false, error: 'Demasiados intentos. Intenta de nuevo más tarde.' });
+  }
+
+  try {
+    const { rows } = await pool.query(
+      'SELECT * FROM casilleros WHERE lower(email) = lower($1) AND is_active = true',
+      [email]
+    );
+    const casillero = rows[0];
+
+    if (!casillero || casillero.numero_documento.trim() !== String(password).trim()) {
+      return res.status(401).json({ success: false, error: 'Correo o contraseña incorrectos.' });
+    }
+
+    const token = crypto.randomUUID();
+    clientSessions.set(token, casillero.id);
+
+    res.cookie('client_session_token', token, {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000
+    });
+
+    res.json({ success: true, codigo: casillero.codigo });
+  } catch (err) {
+    console.error('Client login error:', err.message);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+// 17. Client logout
+app.post('/api/client/logout', (req, res) => {
+  const token = getClientSessionToken(req);
+  if (token) {
+    clientSessions.delete(token);
+  }
+  res.clearCookie('client_session_token');
+  res.json({ success: true });
+});
+
+// 18. Get own casillero info (Protected: client)
+app.get('/api/client/me', requireClientAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM casilleros WHERE id = $1', [req.casilleroId]);
+    if (!rows[0]) {
+      return res.status(404).json({ success: false, error: 'Casillero not found' });
+    }
+    res.json({ success: true, casillero: rows[0] });
+  } catch (err) {
+    console.error('Error fetching own casillero:', err.message);
+    res.status(500).json({ success: false, error: 'Database error' });
+  }
+});
+
+// 19. List own prealertas (Protected: client)
+app.get('/api/client/prealertas', requireClientAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT * FROM prealertas WHERE casillero_id = $1 ORDER BY created_at DESC',
+      [req.casilleroId]
+    );
+    res.json({ success: true, prealertas: rows });
+  } catch (err) {
+    console.error('Error fetching own prealertas:', err.message);
+    res.status(500).json({ success: false, error: 'Database error' });
+  }
+});
+
+// 20. Create a prealerta (Protected: client) — casillero_id always comes from the session, never the body
+app.post('/api/client/prealertas', requireClientAuth, async (req, res) => {
+  const { tracking, tienda, transportadora, valor_declarado_usd, peso_estimado_lb, ciudad_entrega, descripcion, link_soporte } = req.body;
+
+  if (!tienda || !transportadora || !valor_declarado_usd || !ciudad_entrega) {
+    return res.status(400).json({ success: false, error: 'Completa tienda, transportadora, valor declarado y ciudad de entrega.' });
+  }
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO prealertas (casillero_id, tracking, tienda, transportadora, valor_declarado_usd, peso_estimado_lb, ciudad_entrega, descripcion, link_soporte)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
+      [req.casilleroId, tracking || null, tienda, transportadora, valor_declarado_usd, peso_estimado_lb || null, ciudad_entrega, descripcion || null, link_soporte || null]
+    );
+    res.json({ success: true, id: result.rows[0].id });
+  } catch (err) {
+    console.error('Error creating prealerta:', err.message);
+    res.status(500).json({ success: false, error: 'Database error. Please try again.' });
+  }
+});
+
+// 21. List all prealertas, joined with casillero info (Protected: admin)
+app.get('/api/admin/prealertas', requireAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT p.*, c.codigo AS casillero_codigo, c.nombre_completo AS casillero_nombre
+      FROM prealertas p
+      JOIN casilleros c ON c.id = p.casillero_id
+      ORDER BY p.created_at DESC
+    `);
+    res.json({ success: true, prealertas: rows });
+  } catch (err) {
+    console.error('Error fetching prealertas:', err.message);
+    res.status(500).json({ success: false, error: 'Database error' });
+  }
+});
+
+// 22. Update a prealerta's status/notes (Protected: admin)
+app.patch('/api/admin/prealertas/:id', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const { status, admin_notes } = req.body;
+
+  const validStatuses = ['Pendiente', 'En bodega Miami', 'En tránsito', 'Aduana', 'Listo para entrega', 'Entregado'];
+  if (status && !validStatuses.includes(status)) {
+    return res.status(400).json({ success: false, error: 'Invalid status value.' });
+  }
+
+  const updates = [];
+  const values = [];
+  let i = 1;
+  if (status) { updates.push(`status = $${i}`); values.push(status); i++; }
+  if (admin_notes !== undefined) { updates.push(`admin_notes = $${i}`); values.push(admin_notes); i++; }
+  if (updates.length === 0) {
+    return res.status(400).json({ success: false, error: 'No hay campos para actualizar.' });
+  }
+  values.push(id);
+
+  try {
+    const result = await pool.query(`UPDATE prealertas SET ${updates.join(', ')} WHERE id = $${i}`, values);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, error: 'Prealerta not found' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error updating prealerta:', err.message);
+    res.status(500).json({ success: false, error: 'Database error' });
+  }
+});
+
+// 23. Delete a prealerta (Protected: admin)
+app.delete('/api/admin/prealertas/:id', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query('DELETE FROM prealertas WHERE id = $1', [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, error: 'Prealerta not found' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting prealerta:', err.message);
     res.status(500).json({ success: false, error: 'Database error' });
   }
 });

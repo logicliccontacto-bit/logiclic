@@ -78,7 +78,38 @@ async function initDatabase() {
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+  // Fase 2: identidad única por combinación tipo+número de documento (no solo el número),
+  // y por nombre completo normalizado (mayúsculas/espacios) — pedido explícito del negocio.
+  await pool.query(`ALTER TABLE casilleros DROP CONSTRAINT IF EXISTS casilleros_numero_documento_key`);
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS ux_casilleros_tipo_numero
+      ON casilleros (tipo_documento, numero_documento)
+  `);
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS ux_casilleros_nombre
+      ON casilleros (lower(regexp_replace(trim(nombre_completo), '\\s+', ' ', 'g')))
+  `);
   console.log('Casilleros table ready');
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS prealertas (
+      id SERIAL PRIMARY KEY,
+      casillero_id INTEGER NOT NULL REFERENCES casilleros(id) ON DELETE RESTRICT,
+      tracking TEXT,
+      tienda TEXT NOT NULL,
+      transportadora TEXT NOT NULL,
+      valor_declarado_usd NUMERIC(10,2) NOT NULL,
+      peso_estimado_lb NUMERIC(6,2),
+      ciudad_entrega TEXT NOT NULL,
+      descripcion TEXT,
+      link_soporte TEXT,
+      status TEXT NOT NULL DEFAULT 'Pendiente'
+        CHECK (status IN ('Pendiente','En bodega Miami','En tránsito','Aduana','Listo para entrega','Entregado')),
+      admin_notes TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+  console.log('Prealertas table ready');
 
   const { rows } = await pool.query('SELECT COUNT(*)::int AS count FROM users');
   if (rows[0].count === 0) {

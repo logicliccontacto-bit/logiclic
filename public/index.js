@@ -889,7 +889,7 @@ window.enviarSolicitudCasillero = function () {
       btn.textContent = originalText;
       if (data.success) {
         document.getElementById('casilleroRequestForm').reset();
-        resultDiv.innerHTML = '<p style="color:#4ade80;font-size:0.9rem;font-weight:600">✓ ¡Listo! Tu equipo de Logiclic revisará tus datos y te enviará tu código de casillero por WhatsApp o correo.</p>';
+        resultDiv.innerHTML = '<p style="color:#4ade80;font-size:0.9rem;font-weight:600">✓ ¡Listo! Tu equipo de Logiclic revisará tus datos y te enviará tu código de casillero por WhatsApp o correo. Una vez aprobada, podrás ingresar a <a href="client-login.html" style="color:#0ea5e9">tu portal de cliente</a> con este correo y tu número de documento como contraseña.</p>';
         showToast('Solicitud enviada correctamente.', 'success');
       } else {
         resultDiv.innerHTML = '<p style="color:#f43f5e;font-size:0.85rem">' + escapeHtml(data.error || 'Error al enviar la solicitud.') + '</p>';

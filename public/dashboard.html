@@ -34,6 +34,7 @@
       <button class="tab-btn active" data-tab="contactos">Solicitudes de Contacto</button>
       <button class="tab-btn" data-tab="casillero-requests">Solicitudes de Casillero</button>
       <button class="tab-btn" data-tab="casilleros">Casilleros</button>
+      <button class="tab-btn" data-tab="prealertas">Prealertas</button>
     </nav>
 
     <!-- ── TAB: Solicitudes de Contacto ── -->
@@ -223,6 +224,74 @@
       </div>
     </section>
 
+    <!-- ── TAB: Prealertas ── -->
+    <section class="tab-panel" id="tab-prealertas">
+
+      <section class="stats-strip">
+        <div class="stat-card" style="--sc-color: #1a7fe8;">
+          <div class="stat-value" id="paStatTotal">0</div>
+          <div class="stat-label">Total Prealertas</div>
+        </div>
+        <div class="stat-card" style="--sc-color: #e28743;">
+          <div class="stat-value" id="paStatPending">0</div>
+          <div class="stat-label">Pendientes</div>
+        </div>
+        <div class="stat-card" style="--sc-color: #0ea5e9;">
+          <div class="stat-value" id="paStatTransit">0</div>
+          <div class="stat-label">En Bodega / Tránsito</div>
+        </div>
+        <div class="stat-card" style="--sc-color: #10b981;">
+          <div class="stat-value" id="paStatDelivered">0</div>
+          <div class="stat-label">Entregadas</div>
+        </div>
+      </section>
+
+      <div class="main-card">
+        <div class="toolbar">
+          <div class="search-wrap">
+            <input type="text" id="paSearchInput" class="form-input" placeholder="Buscar por casillero, tracking, tienda...">
+          </div>
+          <div class="filter-wrap">
+            <select id="paStatusFilter" class="form-select">
+              <option value="All">Todos los estados</option>
+              <option value="Pendiente">Pendiente</option>
+              <option value="En bodega Miami">En bodega Miami</option>
+              <option value="En tránsito">En tránsito</option>
+              <option value="Aduana">Aduana</option>
+              <option value="Listo para entrega">Listo para entrega</option>
+              <option value="Entregado">Entregado</option>
+            </select>
+          </div>
+          <div class="actions-wrap">
+            <button class="btn btn-refresh" id="paRefreshBtn">↻ Actualizar</button>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="data-table" id="paTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Fecha</th>
+                <th>Casillero</th>
+                <th>Tracking</th>
+                <th>Tienda</th>
+                <th>Valor USD</th>
+                <th>Ciudad</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="paTableBody">
+              <tr>
+                <td colspan="9" class="text-center">Cargando prealertas...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- Details Modal (shared across tabs) -->
@@ -313,5 +382,6 @@
   <script src="dashboard.js"></script>
   <script src="dashboard-casillero-requests.js"></script>
   <script src="dashboard-casilleros.js"></script>
+  <script src="dashboard-prealertas.js"></script>
 </body>
 </html>
