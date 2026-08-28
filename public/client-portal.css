@@ -19,6 +19,18 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
+.portal-logo-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.portal-logo-icon {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+
 .portal-logo {
   font-family: var(--fh);
   font-size: 22px;
