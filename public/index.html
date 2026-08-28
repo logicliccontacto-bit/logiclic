@@ -216,6 +216,57 @@
     </div>
   </div>
 
+  <div class="calculator-card casillero-request-card" id="casilleroRequestCard">
+    <h3>📬 Solicita tu Casillero Internacional</h3>
+    <p>Regístrate una vez y te asignamos tu código de casillero en Miami para empezar a comprar.</p>
+    <form id="casilleroRequestForm" onsubmit="return false;">
+      <div class="field">
+        <label for="crNombre">Nombre completo</label>
+        <input type="text" id="crNombre" placeholder="Nombre y apellidos" required>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="crTipoDocumento">Tipo de documento</label>
+          <select id="crTipoDocumento" required>
+            <option value="">Selecciona...</option>
+            <option value="Cédula">Cédula</option>
+            <option value="Cédula de Extranjería">Cédula de Extranjería</option>
+            <option value="Pasaporte">Pasaporte</option>
+            <option value="NIT">NIT</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="crNumeroDocumento">Número de documento</label>
+          <input type="text" id="crNumeroDocumento" placeholder="Ej: 1020304050" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="crEmail">Email</label>
+          <input type="email" id="crEmail" placeholder="tu@correo.com" required>
+        </div>
+        <div class="field">
+          <label for="crTelefono">Teléfono / WhatsApp</label>
+          <input type="tel" id="crTelefono" placeholder="Ej: 3001234567" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="crCiudad">Ciudad</label>
+          <input type="text" id="crCiudad" placeholder="Ej: Bogotá" required>
+        </div>
+        <div class="field">
+          <label for="crTipoImportacion">Tipo de importación (opcional)</label>
+          <input type="text" id="crTipoImportacion" placeholder="Ej: Personal, Comercial...">
+        </div>
+      </div>
+      <!-- Honeypot: hidden from real visitors, bots tend to fill every field -->
+      <input type="text" id="crWebsite" name="website" autocomplete="off" tabindex="-1" style="position:absolute; left:-9999px; width:1px; height:1px; opacity:0;">
+      <button type="button" class="btn-primary" style="width:100%; text-align:center; border:none" onclick="enviarSolicitudCasillero()">Solicitar mi Casillero</button>
+      <div class="calculator-result" id="casilleroRequestResult"></div>
+    </form>
+  </div>
+
   <div class="process-steps">
     <div class="step"><div class="step-num">01</div><h3>Elige tus productos</h3><p>Explora Amazon, Target, Nike, Adidas, eBay o la tienda que prefieras y arma tu lista o comparte los links.</p></div>
     <div class="step"><div class="step-num">02</div><h3>Nosotros compramos</h3><p>Hacemos la compra por ti y la recibimos en nuestro casillero en Miami. Sin tarjetas ni direcciones en EE.UU.</p></div>

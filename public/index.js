@@ -856,6 +856,54 @@ window.descargarCotizacionPDF = function () {
   doc.save('cotizacion-logiclic-' + Date.now() + '.pdf');
 };
 
+// Solicitud de casillero internacional
+window.enviarSolicitudCasillero = function () {
+  const nombre_completo = document.getElementById('crNombre').value.trim();
+  const tipo_documento = document.getElementById('crTipoDocumento').value;
+  const numero_documento = document.getElementById('crNumeroDocumento').value.trim();
+  const email = document.getElementById('crEmail').value.trim();
+  const telefono = document.getElementById('crTelefono').value.trim();
+  const ciudad = document.getElementById('crCiudad').value.trim();
+  const tipo_importacion = document.getElementById('crTipoImportacion').value.trim();
+  const website = document.getElementById('crWebsite').value;
+  const resultDiv = document.getElementById('casilleroRequestResult');
+
+  if (!nombre_completo || !tipo_documento || !numero_documento || !email || !telefono || !ciudad) {
+    resultDiv.innerHTML = '<p style="color:#f43f5e;font-size:0.85rem">Completa todos los campos requeridos.</p>';
+    return;
+  }
+
+  const btn = document.querySelector('#casilleroRequestForm .btn-primary');
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.textContent = 'Enviando...';
+
+  fetch('/api/casillero-requests', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nombre_completo, tipo_documento, numero_documento, email, telefono, ciudad, tipo_importacion, website })
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      btn.disabled = false;
+      btn.textContent = originalText;
+      if (data.success) {
+        document.getElementById('casilleroRequestForm').reset();
+        resultDiv.innerHTML = '<p style="color:#4ade80;font-size:0.9rem;font-weight:600">✓ ¡Listo! Tu equipo de Logiclic revisará tus datos y te enviará tu código de casillero por WhatsApp o correo.</p>';
+        showToast('Solicitud enviada correctamente.', 'success');
+      } else {
+        resultDiv.innerHTML = '<p style="color:#f43f5e;font-size:0.85rem">' + escapeHtml(data.error || 'Error al enviar la solicitud.') + '</p>';
+        showToast(data.error || 'Error al enviar la solicitud.', 'error');
+      }
+    })
+    .catch(() => {
+      btn.disabled = false;
+      btn.textContent = originalText;
+      resultDiv.innerHTML = '<p style="color:#f43f5e;font-size:0.85rem">Error de red. Inténtalo de nuevo.</p>';
+      showToast('Error de red. Inténtalo de nuevo.', 'error');
+    });
+};
+
 window.calcularAhorro = function() {
   var libras = parseFloat(document.getElementById('calc-libras').value);
   var precioActual = parseFloat(document.getElementById('calc-precio').value);

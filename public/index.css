@@ -231,6 +231,7 @@ h2{font-family:var(--fh);font-size:clamp(1.9rem,3.5vw,2.9rem);font-weight:800;le
 .calculator-card .form-row{margin-bottom:0;gap:1rem}
 .calculator-card .btn-secondary{width:100%;text-align:center;padding:0.85rem 1.5rem}
 .calculator-card.quote-full .btn-primary{width:100%;text-align:center;border:none}
+.casillero-request-card{max-width:640px;margin:0 auto 3.5rem}
 
 /* ── PROCESS ── */
 .process-section{background:var(--bg2)}

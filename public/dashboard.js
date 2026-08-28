@@ -1,11 +1,15 @@
 // ── Dashboard Controller ──
+// ── Shared registries used by dashboard-casillero-requests.js and dashboard-casilleros.js ──
+window._tabModules = {};      // tabName -> { init(), _loaded }
+window._deleteHandlers = {};  // type -> async function(id)
+window._pendingDelete = null; // { type, id }
+
 (function () {
   'use strict';
 
   let allRequests = [];
-  let pendingDeleteId = null;
 
-  // ── Utils ──
+  // ── Utils (shared with the other tab modules via window) ──
   function formatDate(isoStr) {
     if (!isoStr) return '—';
     const d = new Date(isoStr);
@@ -14,6 +18,7 @@
       hour: '2-digit', minute: '2-digit'
     });
   }
+  window.formatDate = formatDate;
 
   function statusClass(status) {
     if (status === 'Pendiente') return 'status-pendiente';
@@ -149,7 +154,7 @@
         <td>
           <div class="actions-cell">
             <button class="btn btn-action-view" onclick="window._viewDetails(${r.id})">Ver</button>
-            <button class="btn btn-action-delete" onclick="window._confirmDelete(${r.id})">Eliminar</button>
+            <button class="btn btn-action-delete" onclick="window._confirmDelete('contacto', ${r.id})">Eliminar</button>
           </div>
         </td>
       </tr>
@@ -160,6 +165,7 @@
     if (!str) return '';
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
+  window.escapeHtml = escapeHtml;
 
   // ── Status Update ──
   window._updateStatus = async function (id, newStatus) {
@@ -188,6 +194,7 @@
     const r = allRequests.find(req => req.id === id);
     if (!r) return;
 
+    document.getElementById('modalDetailsTitle').textContent = 'Detalles de la Solicitud';
     document.getElementById('modalDetailsContent').innerHTML = `
       <div class="detail-grid">
         <div class="detail-item">
@@ -229,18 +236,13 @@
     openModal('detailsModal');
   };
 
-  // ── Delete Modal ──
-  window._confirmDelete = function (id) {
-    pendingDeleteId = id;
+  // ── Delete Modal (shared dispatcher lives at the bottom of this file) ──
+  window._confirmDelete = function (type, id) {
+    window._pendingDelete = { type, id };
     openModal('deleteModal');
   };
 
-  document.getElementById('confirmDeleteBtn').addEventListener('click', async function () {
-    if (!pendingDeleteId) return;
-    const id = pendingDeleteId;
-    pendingDeleteId = null;
-    closeModal('deleteModal');
-
+  window._deleteHandlers.contacto = async function (id) {
     try {
       const res = await fetch(`/api/admin/requests/${id}`, { method: 'DELETE' });
       const data = await res.json();
@@ -255,7 +257,7 @@
     } catch (err) {
       showToast('Error de red al eliminar.', 'error');
     }
-  });
+  };
 
   // ── Modal Helpers ──
   window.openModal = function (id) {
@@ -311,6 +313,7 @@
   document.getElementById('refreshBtn').addEventListener('click', fetchRequests);
 
   // ── Toast Notifications ──
+  window.showToast = showToast;
   function showToast(message, type = 'success') {
     let container = document.getElementById('toastContainer');
     if (!container) {
@@ -357,10 +360,43 @@
     }, 3500);
   }
 
+  window._tabModules.contactos = { init: fetchRequests, _loaded: false };
+
+  // ── Delete Modal: shared dispatcher across all tabs ──
+  document.getElementById('confirmDeleteBtn').addEventListener('click', async function () {
+    const pending = window._pendingDelete;
+    if (!pending) return;
+    window._pendingDelete = null;
+    closeModal('deleteModal');
+    const handler = window._deleteHandlers[pending.type];
+    if (handler) await handler(pending.id);
+  });
+
+  // ── Tabs ──
+  const VALID_TABS = ['contactos', 'casillero-requests', 'casilleros'];
+
+  function switchTab(tabName) {
+    if (!VALID_TABS.includes(tabName)) tabName = 'contactos';
+    document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('active', b.dataset.tab === tabName));
+    document.querySelectorAll('.tab-panel').forEach((p) => p.classList.toggle('active', p.id === 'tab-' + tabName));
+    history.replaceState(null, '', '#' + tabName);
+
+    const mod = window._tabModules[tabName];
+    if (mod && !mod._loaded) {
+      mod._loaded = true;
+      mod.init();
+    }
+  }
+
+  document.querySelectorAll('.tab-btn').forEach((btn) => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
   // ── Init ──
   async function init() {
     await checkSession();
-    await fetchRequests();
+    const initialTab = location.hash.replace('#', '');
+    switchTab(VALID_TABS.includes(initialTab) ? initialTab : 'contactos');
     hideLoader();
   }
 

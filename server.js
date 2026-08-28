@@ -71,6 +71,32 @@ async function getTRM() {
   return trmCache.valor || TRM_FALLBACK;
 }
 
+// === Casillero requests: simple in-memory rate limiter (mirrors the sessions Map above) ===
+const casilleroRateLimit = new Map(); // ip -> timestamps[]
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const RATE_LIMIT_MAX = 5;
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  const timestamps = (casilleroRateLimit.get(ip) || []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+  timestamps.push(now);
+  casilleroRateLimit.set(ip, timestamps);
+  return timestamps.length > RATE_LIMIT_MAX;
+}
+
+const VALID_TIPOS_DOCUMENTO = ['Cédula', 'Cédula de Extranjería', 'Pasaporte', 'NIT'];
+
+async function casilleroDuplicateExists(numeroDocumento, email) {
+  const { rows } = await pool.query(
+    `SELECT 1 FROM casillero_requests WHERE numero_documento = $1 AND status = 'Pendiente'
+     UNION
+     SELECT 1 FROM casilleros WHERE numero_documento = $1 OR email = $2
+     LIMIT 1`,
+    [numeroDocumento, email]
+  );
+  return rows.length > 0;
+}
+
 // === API ENDPOINTS ===
 
 // 0. Get today's TRM + handling fee (only the final value is exposed)
@@ -207,6 +233,189 @@ app.delete('/api/admin/requests/:id', requireAuth, async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error('Error deleting request:', err.message);
+    res.status(500).json({ success: false, error: 'Database error' });
+  }
+});
+
+// 8. Submit a casillero request (public)
+app.post('/api/casillero-requests', async (req, res) => {
+  const { nombre_completo, tipo_documento, numero_documento, email, telefono, ciudad, tipo_importacion, website } = req.body;
+
+  // Honeypot: bots fill hidden fields humans never see
+  if (website) {
+    return res.json({ success: true, id: 0 });
+  }
+
+  if (isRateLimited(req.ip)) {
+    return res.status(429).json({ success: false, error: 'Demasiadas solicitudes. Intenta de nuevo más tarde.' });
+  }
+
+  if (!nombre_completo || !tipo_documento || !numero_documento || !email || !telefono || !ciudad) {
+    return res.status(400).json({ success: false, error: 'Completa todos los campos requeridos.' });
+  }
+  if (!VALID_TIPOS_DOCUMENTO.includes(tipo_documento)) {
+    return res.status(400).json({ success: false, error: 'Tipo de documento inválido.' });
+  }
+
+  try {
+    const duplicate = await casilleroDuplicateExists(numero_documento, email);
+    if (duplicate) {
+      return res.status(409).json({ success: false, error: 'Ya existe una solicitud o cuenta asociada a estos datos.' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO casillero_requests (nombre_completo, tipo_documento, numero_documento, email, telefono, ciudad, tipo_importacion)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+      [nombre_completo, tipo_documento, numero_documento, email, telefono, ciudad, tipo_importacion || null]
+    );
+    res.json({ success: true, id: result.rows[0].id });
+  } catch (err) {
+    if (err.code === '23505') {
+      return res.status(409).json({ success: false, error: 'Ya existe una solicitud o cuenta asociada a estos datos.' });
+    }
+    console.error('Error creating casillero request:', err.message);
+    res.status(500).json({ success: false, error: 'Database error. Please try again.' });
+  }
+});
+
+// 9. List casillero requests (Protected)
+app.get('/api/admin/casillero-requests', requireAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM casillero_requests ORDER BY created_at DESC');
+    res.json({ success: true, requests: rows });
+  } catch (err) {
+    console.error('Error fetching casillero requests:', err.message);
+    res.status(500).json({ success: false, error: 'Database error' });
+  }
+});
+
+// 10. Approve a casillero request: creates the casillero account with a sequential code (Protected)
+app.patch('/api/admin/casillero-requests/:id/approve', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const upd = await client.query(
+      `UPDATE casillero_requests SET status = 'Aprobada', reviewed_by = $1, reviewed_at = NOW()
+       WHERE id = $2 AND status = 'Pendiente' RETURNING *`,
+      [req.username, id]
+    );
+    if (upd.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ success: false, error: 'La solicitud ya fue procesada.' });
+    }
+    const r = upd.rows[0];
+    const ins = await client.query(
+      `INSERT INTO casilleros (source_request_id, codigo, nombre_completo, tipo_documento, numero_documento, email, telefono, ciudad)
+       VALUES ($1, '', $2, $3, $4, $5, $6, $7) RETURNING id`,
+      [r.id, r.nombre_completo, r.tipo_documento, r.numero_documento, r.email, r.telefono, r.ciudad]
+    );
+    const codigo = 'LGC-' + String(ins.rows[0].id).padStart(4, '0');
+    await client.query('UPDATE casilleros SET codigo = $1 WHERE id = $2', [codigo, ins.rows[0].id]);
+    await client.query('COMMIT');
+    res.json({ success: true, codigo });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    if (err.code === '23505') {
+      return res.status(409).json({ success: false, error: 'Ya existe un casillero con ese documento o correo.' });
+    }
+    console.error('Error approving casillero request:', err.message);
+    res.status(500).json({ success: false, error: 'Database error' });
+  } finally {
+    client.release();
+  }
+});
+
+// 11. Reject a casillero request (Protected)
+app.patch('/api/admin/casillero-requests/:id/reject', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const { rejection_reason } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE casillero_requests SET status = 'Rechazada', reviewed_by = $1, reviewed_at = NOW(), rejection_reason = $2
+       WHERE id = $3 AND status = 'Pendiente'`,
+      [req.username, rejection_reason || null, id]
+    );
+    if (result.rowCount === 0) {
+      return res.status(409).json({ success: false, error: 'La solicitud ya fue procesada.' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error rejecting casillero request:', err.message);
+    res.status(500).json({ success: false, error: 'Database error' });
+  }
+});
+
+// 12. Delete a casillero request (Protected)
+app.delete('/api/admin/casillero-requests/:id', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query('DELETE FROM casillero_requests WHERE id = $1', [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, error: 'Request not found' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting casillero request:', err.message);
+    res.status(500).json({ success: false, error: 'Database error' });
+  }
+});
+
+// 13. List casilleros (Protected)
+app.get('/api/admin/casilleros', requireAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM casilleros ORDER BY created_at DESC');
+    res.json({ success: true, casilleros: rows });
+  } catch (err) {
+    console.error('Error fetching casilleros:', err.message);
+    res.status(500).json({ success: false, error: 'Database error' });
+  }
+});
+
+// 14. Update a casillero (partial update) (Protected)
+app.patch('/api/admin/casilleros/:id', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const allowedFields = ['nombre_completo', 'telefono', 'ciudad', 'email', 'is_active'];
+  const updates = [];
+  const values = [];
+  let i = 1;
+  for (const field of allowedFields) {
+    if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+      updates.push(`${field} = $${i}`);
+      values.push(req.body[field]);
+      i++;
+    }
+  }
+  if (updates.length === 0) {
+    return res.status(400).json({ success: false, error: 'No hay campos para actualizar.' });
+  }
+  values.push(id);
+  try {
+    const result = await pool.query(`UPDATE casilleros SET ${updates.join(', ')} WHERE id = $${i}`, values);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, error: 'Casillero not found' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    if (err.code === '23505') {
+      return res.status(409).json({ success: false, error: 'Ya existe un casillero con ese documento o correo.' });
+    }
+    console.error('Error updating casillero:', err.message);
+    res.status(500).json({ success: false, error: 'Database error' });
+  }
+});
+
+// 15. Delete a casillero (Protected)
+app.delete('/api/admin/casilleros/:id', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query('DELETE FROM casilleros WHERE id = $1', [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, error: 'Casillero not found' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting casillero:', err.message);
     res.status(500).json({ success: false, error: 'Database error' });
   }
 });

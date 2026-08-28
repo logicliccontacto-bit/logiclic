@@ -212,6 +212,86 @@ body {
   box-shadow: 0 2px 8px rgba(244, 63, 94, 0.2);
 }
 
+.btn-action-approve {
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid var(--completed-border);
+  color: var(--completed-color);
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.btn-action-approve:hover {
+  background: var(--completed-color);
+  color: #fff;
+  border-color: var(--completed-color);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
+.btn-action-reject {
+  background: rgba(245, 158, 11, 0.06);
+  border: 1px solid var(--pending-border);
+  color: var(--pending-color);
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.btn-action-reject:hover {
+  background: var(--pending-color);
+  color: #fff;
+  border-color: var(--pending-color);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+}
+
+/* ── TABS ── */
+.dashboard-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 4px;
+  margin-right: 24px;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s;
+}
+
+.tab-btn:hover {
+  color: var(--text);
+}
+
+.tab-btn.active {
+  color: #0ea5e9;
+}
+
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: linear-gradient(135deg, var(--blue), #0ea5e9);
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
 /* ── CONTAINER ── */
 .dashboard-container {
   max-width: 1200px;
@@ -423,6 +503,42 @@ body {
   border-color: var(--completed-border);
 }
 .status-completed::before { background: var(--completed-color); }
+
+.status-aprobada, .status-active {
+  background: var(--completed-bg);
+  color: var(--completed-color);
+  border-color: var(--completed-border);
+}
+.status-aprobada::before, .status-active::before { background: var(--completed-color); }
+
+.status-rechazada {
+  background: var(--danger-bg);
+  color: var(--danger-color);
+  border-color: var(--danger-border);
+}
+.status-rechazada::before { background: var(--danger-color); }
+
+.status-inactive {
+  background: rgba(100, 116, 139, 0.1);
+  color: var(--text-muted);
+  border-color: rgba(100, 116, 139, 0.25);
+}
+.status-inactive::before { background: var(--text-muted); }
+
+/* ── FORM FIELDS INSIDE MODALS (reject reason, edit casillero) ── */
+.modal-form-field {
+  margin-bottom: 16px;
+}
+
+.modal-form-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-light);
+  margin-bottom: 6px;
+}
 
 /* Status selector in table row */
 .status-select {
