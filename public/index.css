@@ -23,46 +23,16 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:16px
 canvas#bg{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.75}
 
 /* ── NAV ── */
-/* topbar + nav are wrapped in one fixed header so nav always sits right
-   below the topbar's real (variable) height — no hardcoded top offsets */
+/* Header is just the nav now (topbar was removed); still wrapped in
+   .site-header and measured by JS for --header-height for robustness. */
 .site-header{
   position:fixed;top:0;left:0;right:0;z-index:201;
 }
-.topbar{
-  background:rgba(8,14,26,0.98);
-  border-bottom:1px solid var(--border);
-  padding:0 5%;height:36px;
-  display:flex;align-items:center;justify-content:space-between;
-}
-.topbar-contact{display:flex;align-items:center;gap:1.4rem}
-.topbar-contact a{color:var(--muted);text-decoration:none;font-size:0.74rem;display:flex;align-items:center;gap:0.35rem;transition:color 0.2s;white-space:nowrap;}
-.topbar-contact a:hover{color:var(--blue2)}
-.trm-badge{color:var(--blue2);font-size:0.74rem;font-weight:700;display:flex;align-items:center;gap:0.35rem;white-space:nowrap;}
-.topbar-social{display:flex;align-items:center;gap:0.5rem}
-.topbar-social span{color:var(--muted);font-size:0.72rem;margin-right:0.4rem;letter-spacing:0.04em}
-.topbar-social a{
-  color:var(--muted);text-decoration:none;font-size:0.74rem;font-weight:500;
-  padding:0.15rem 0.55rem;border-radius:4px;border:1px solid transparent;
-  transition:all 0.2s;display:flex;align-items:center;gap:0.25rem;white-space:nowrap;
-}
-.topbar-social a:hover{color:var(--blue2);border-color:var(--border2);background:rgba(26,127,232,0.08)}
-
-/* TABLET: ocultar correo, condensar */
-@media(max-width:900px){
-  .topbar{height:auto;min-height:36px;flex-wrap:wrap;padding:6px 4%;gap:4px;}
-  .topbar-contact{gap:0.8rem;flex-wrap:wrap;}
-  .hide-tablet{display:none}
-  .topbar-social span{display:none}
-  .topbar-social{gap:0.3rem}
-}
-
-/* MÓVIL: topbar en dos filas pequeñas */
-@media(max-width:600px){
-  .topbar{flex-direction:column;align-items:flex-start;height:auto;padding:5px 4%;gap:3px;}
-  .topbar-contact{gap:0.7rem;}
-  .topbar-contact a{font-size:0.7rem;}
-  .topbar-social{gap:0.25rem;}
-  .topbar-social a{font-size:0.7rem;padding:0.1rem 0.35rem;}
+.trm-badge{
+  display:inline-flex;align-items:center;gap:0.4rem;
+  background:rgba(14,165,233,0.1);border:1px solid var(--border2);
+  color:var(--blue2);font-size:0.85rem;font-weight:700;
+  padding:0.5rem 1.1rem;border-radius:100px;
 }
 nav{
   display:flex;justify-content:space-between;align-items:center;
@@ -355,16 +325,94 @@ h2{font-family:var(--fh);font-size:clamp(1.9rem,3.5vw,2.9rem);font-weight:800;le
 
 /* ── FOOTER ── */
 footer{
-  padding:2rem 5%;background:var(--bg);
-  display:flex;justify-content:space-between;align-items:center;
-  flex-wrap:wrap;gap:1.2rem;border-top:1px solid var(--border);
-  position:relative;z-index:1;
+  background:var(--bg3);border-top:1px solid var(--border);
+  padding:4rem 5% 0;position:relative;z-index:1;
 }
-.footer-logo img{height:38px;object-fit:contain;filter:brightness(0.8) saturate(0.8)}
-footer p{color:var(--muted);font-size:0.8rem}
-.footer-links{display:flex;gap:1.5rem;list-style:none}
-.footer-links a{color:var(--muted);text-decoration:none;font-size:0.8rem;transition:color 0.2s}
-.footer-links a:hover{color:var(--blue2)}
+.footer-top{
+  display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:2.5rem;
+  max-width:1200px;margin:0 auto;padding-bottom:3rem;
+}
+.footer-brand .footer-logo-img{height:44px;object-fit:contain;filter:brightness(0) invert(1);margin-bottom:0.9rem}
+.footer-tagline{color:var(--muted);font-size:0.87rem;line-height:1.6;max-width:280px}
+.footer-col h4{
+  font-family:var(--fh);font-size:0.78rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:0.08em;color:var(--text);margin-bottom:1.1rem;
+}
+.footer-col{display:flex;flex-direction:column;gap:0.7rem}
+.footer-col a{color:var(--muted);text-decoration:none;font-size:0.87rem;transition:color 0.2s}
+.footer-col a:hover{color:var(--blue2)}
+.footer-social{display:flex;gap:0.8rem;margin-top:0.3rem}
+.footer-social a{
+  font-size:0.78rem;padding:0.3rem 0.7rem;border-radius:6px;
+  border:1px solid var(--border);
+}
+.footer-social a:hover{border-color:var(--border2);background:rgba(26,127,232,0.08)}
+.footer-bottom{
+  border-top:1px solid var(--border);padding:1.5rem 0;
+  text-align:center;color:var(--muted);font-size:0.8rem;
+}
+
+/* ── FLOATING WHATSAPP ── */
+.whatsapp-float{
+  position:fixed;right:1.5rem;bottom:1.5rem;z-index:150;
+  width:56px;height:56px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--blue),var(--blue2));
+  box-shadow:0 4px 20px rgba(26,127,232,0.5);
+  transition:transform 0.2s,box-shadow 0.2s;
+}
+.whatsapp-float:hover{transform:translateY(-3px) scale(1.05);box-shadow:0 6px 28px rgba(26,127,232,0.65)}
+
+/* ── PILARES (dos negocios) ── */
+.pillars-intro{padding-top:0}
+.pillars-intro-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;
+  max-width:900px;margin:0 auto;
+}
+.pillar-intro-card{
+  background:var(--card);border:1px solid var(--border);border-radius:18px;
+  padding:2rem;text-decoration:none;transition:border-color 0.2s,transform 0.2s;
+  display:flex;flex-direction:column;gap:0.6rem;
+}
+.pillar-intro-card:hover{border-color:var(--border2);transform:translateY(-3px)}
+.pillar-intro-icon{
+  width:52px;height:52px;border-radius:12px;
+  background:rgba(14,165,233,0.12);color:var(--blue2);
+  display:flex;align-items:center;justify-content:center;margin-bottom:0.4rem;
+}
+.pillar-intro-card h3{font-family:var(--fh);font-size:1.25rem;font-weight:700;color:var(--text)}
+.pillar-intro-card p{color:var(--muted);font-size:0.9rem;line-height:1.55}
+.pillar-intro-link{color:var(--blue2);font-size:0.87rem;font-weight:600;margin-top:0.3rem}
+
+/* ── CALCULADORAS COLAPSABLES ── */
+.calc-accordion{margin-bottom:2rem}
+.calc-accordion summary{
+  list-style:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:1.2rem 1.6rem;font-family:var(--fh);font-weight:700;font-size:1.05rem;
+  color:var(--text);transition:border-color 0.2s;
+}
+.calc-accordion summary::-webkit-details-marker{display:none}
+.calc-accordion summary::after{
+  content:'▾';color:var(--blue2);font-size:1.1rem;transition:transform 0.2s;
+}
+.calc-accordion[open] summary::after{transform:rotate(180deg)}
+.calc-accordion summary:hover{border-color:var(--border2)}
+.calc-accordion[open] summary{border-radius:14px 14px 0 0;border-bottom:none}
+.calc-accordion .quote-flow,.calc-accordion .calculator-box{
+  border:1px solid var(--border);border-top:none;border-radius:0 0 14px 14px;
+  padding:1.5rem;
+}
+.calc-accordion .quote-flow{max-width:none;margin:0}
+
+@media(max-width:900px){
+  .footer-top{grid-template-columns:1fr 1fr;gap:2rem}
+  .pillars-intro-grid{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .footer-top{grid-template-columns:1fr;gap:2rem}
+}
 
 /* ── ANIMATIONS ── */
 @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
@@ -392,7 +440,6 @@ footer p{color:var(--muted);font-size:0.8rem}
   .nav-links{display:none}
   .hamburger{display:flex}
   .form-row{flex-direction:column}
-  footer{flex-direction:column;align-items:flex-start}
 }
 @media(min-width:601px) and (max-width:900px){
   .nav-links{gap:1.2rem}
