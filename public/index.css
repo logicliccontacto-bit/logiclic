@@ -23,8 +23,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:16px
 canvas#bg{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.75}
 
 /* ── NAV ── */
-.topbar{
+/* topbar + nav are wrapped in one fixed header so nav always sits right
+   below the topbar's real (variable) height — no hardcoded top offsets */
+.site-header{
   position:fixed;top:0;left:0;right:0;z-index:201;
+}
+.topbar{
   background:rgba(8,14,26,0.98);
   border-bottom:1px solid var(--border);
   padding:0 5%;height:36px;
@@ -61,7 +65,6 @@ canvas#bg{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.75}
   .topbar-social a{font-size:0.7rem;padding:0.1rem 0.35rem;}
 }
 nav{
-  position:fixed;top:36px;left:0;right:0;z-index:200;
   display:flex;justify-content:space-between;align-items:center;
   padding:0 5%;height:80px;
   background:rgba(26,32,48,0.88);
@@ -91,7 +94,7 @@ nav::after{
   min-height:100vh;display:grid;
   grid-template-columns:1fr 1fr;
   align-items:center;
-  padding:9rem 5% 4rem;overflow:hidden;
+  padding:calc(var(--header-height, 130px) + 2rem) 5% 4rem;overflow:hidden;
   gap:2rem;
 }
 #brain-canvas{
@@ -375,7 +378,7 @@ footer p{color:var(--muted);font-size:0.8rem}
 .hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px;background:none;border:none;}
 .hamburger span{display:block;width:22px;height:2px;background:var(--muted);border-radius:2px;transition:all 0.3s;}
 .mobile-menu{
-  display:none;position:fixed;top:116px;left:0;right:0;z-index:199;
+  display:none;position:fixed;top:var(--header-height, 116px);left:0;right:0;z-index:199;
   background:rgba(10,16,30,0.98);backdrop-filter:blur(20px);
   padding:1.5rem 5%;flex-direction:column;gap:1.2rem;
   border-bottom:1px solid var(--border);
@@ -385,17 +388,13 @@ footer p{color:var(--muted);font-size:0.8rem}
 .mobile-menu a:last-child{border-bottom:none;color:var(--blue2);}
 
 @media(max-width:640px){
-  nav{padding:0 4%;top:58px;}
+  nav{padding:0 4%;}
   .nav-links{display:none}
   .hamburger{display:flex}
   .form-row{flex-direction:column}
   footer{flex-direction:column;align-items:flex-start}
-  .hero{padding:10rem 5% 4rem}
-  .mobile-menu{top:138px}
 }
 @media(min-width:601px) and (max-width:900px){
-  nav{top:52px;}
   .nav-links{gap:1.2rem}
   .nav-links a{font-size:0.8rem}
-  .mobile-menu{top:132px}
 }

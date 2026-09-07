@@ -13,6 +13,7 @@
 
 <!-- NAV -->
 <!-- TOPBAR -->
+<header class="site-header">
 <div class="topbar">
   <div class="topbar-contact">
     <span class="trm-badge">💵 TRM hoy: <span id="trmValue">cargando...</span></span>
@@ -42,19 +43,20 @@
     <li><a href="login.html" target="_blank" rel="noopener noreferrer">Admin</a></li>
     <li><a href="#contacto" class="nav-cta">Hablemos →</a></li>
   </ul>
-  <button class="hamburger" onclick="toggleMenu()" aria-label="Menú"><span></span><span></span><span></span></button>
+  <button class="hamburger" aria-label="Menú"><span></span><span></span><span></span></button>
 </nav>
+</header>
 
 <!-- MOBILE MENU -->
 <div class="mobile-menu" id="mobileMenu">
-  <a href="#servicios" onclick="toggleMenu()">Servicios</a>
-  <a href="#comprausa" onclick="toggleMenu()">Compra USA</a>
-  <a href="#proceso" onclick="toggleMenu()">Proceso</a>
-  <a href="#tecnologias" onclick="toggleMenu()">Tecnologías</a>
-  <a href="#precios" onclick="toggleMenu()">Precios</a>
+  <a href="#servicios">Servicios</a>
+  <a href="#comprausa">Compra USA</a>
+  <a href="#proceso">Proceso</a>
+  <a href="#tecnologias">Tecnologías</a>
+  <a href="#precios">Precios</a>
   <a href="client-login.html" target="_blank" rel="noopener noreferrer">Mi Casillero</a>
   <a href="login.html" target="_blank" rel="noopener noreferrer">Admin</a>
-  <a href="#contacto" onclick="toggleMenu()">Hablemos →</a>
+  <a href="#contacto">Hablemos →</a>
 </div>
 
 <!-- HERO -->
@@ -62,7 +64,7 @@
   <canvas id="brain-canvas"></canvas>
   <div class="hero-content">
     <div class="badge"><span class="badge-dot"></span>IA · Automatización · Desarrollo</div>
-    <h1 id="hero-title" aria-label="Tu empresa, potenciada con tecnología inteligente"></h1>
+    <h1 id="hero-title">Tu empresa, potenciada con <em>tecnología inteligente</em></h1>
     <p class="hero-sub">Automatizamos tus procesos y desarrollamos software a medida para que tu empresa opere más rápido, con menos errores y mayor escala.</p>
     <div class="hero-btns">
       <a href="#contacto" class="btn-primary">Solicitar solución →</a>

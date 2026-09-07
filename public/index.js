@@ -1,3 +1,24 @@
+// Keep the hero/mobile-menu spacing in sync with the fixed header's REAL height
+// (the topbar wraps to 1-3 lines depending on viewport width, so this can't be a
+// fixed pixel value in CSS without risking the hero title overlapping the nav).
+(function () {
+  var header = document.querySelector('.site-header');
+  if (!header) return;
+
+  function updateHeaderHeight() {
+    document.documentElement.style.setProperty('--header-height', header.offsetHeight + 'px');
+  }
+
+  updateHeaderHeight();
+  window.addEventListener('resize', updateHeaderHeight);
+  window.addEventListener('orientationchange', updateHeaderHeight);
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(updateHeaderHeight);
+  }
+  // TRM loads asynchronously and can change the topbar's wrap width
+  setTimeout(updateHeaderHeight, 800);
+})();
+
 (function(){
   var C=document.getElementById('brain-canvas');
   if (!C) return;
