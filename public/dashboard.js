@@ -82,7 +82,7 @@ window._pendingDelete = null; // { type, id }
       }
     } catch (err) {
       document.getElementById('tableBody').innerHTML =
-        `<tr><td colspan="7" class="text-center" style="color:#f43f5e;">Error cargando datos. Verifica tu conexión.</td></tr>`;
+        `<tr><td colspan="8" class="text-center" style="color:#f43f5e;">Error cargando datos. Verifica tu conexión.</td></tr>`;
     }
   }
 
@@ -133,7 +133,7 @@ window._pendingDelete = null; // { type, id }
     const tbody = document.getElementById('tableBody');
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7" class="text-center" style="color:#64748b; padding: 40px;">No se encontraron solicitudes.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" class="text-center" style="color:#64748b; padding: 40px;">No se encontraron solicitudes.</td></tr>`;
       return;
     }
 
@@ -151,14 +151,22 @@ window._pendingDelete = null; // { type, id }
             <option value="Completado" ${r.status === 'Completado' ? 'selected' : ''}>Completado</option>
           </select>
         </td>
+        <td>${quotationBadge(r)}</td>
         <td>
           <div class="actions-cell">
             <button class="btn btn-action-view" onclick="window._viewDetails(${r.id})">Ver</button>
+            <button class="btn btn-action-view" onclick="window._openQuotation(${r.id})">Cotización</button>
             <button class="btn btn-action-delete" onclick="window._confirmDelete('contacto', ${r.id})">Eliminar</button>
           </div>
         </td>
       </tr>
     `).join('');
+  }
+
+  function quotationBadge(r) {
+    if (r.quotation_email_status === 'enviado') return `<span class="status-badge status-completed">Enviada</span>`;
+    if (r.quotation_email_status === 'error') return `<span class="status-badge status-rechazada">Error envío</span>`;
+    return `<span class="status-badge status-inactive">—</span>`;
   }
 
   function escapeHtml(str) {
@@ -258,6 +266,63 @@ window._pendingDelete = null; // { type, id }
       showToast('Error de red al eliminar.', 'error');
     }
   };
+
+  // ── Quotation Upload Modal ──
+  let currentQuotationId = null;
+
+  window._openQuotation = function (id) {
+    const r = allRequests.find(req => req.id === id);
+    if (!r) return;
+    currentQuotationId = id;
+
+    document.getElementById('quotationModalInfo').textContent = `Cliente: ${r.name} (${r.email})`;
+    document.getElementById('quotationFileInput').value = '';
+    document.getElementById('quotationStatusText').textContent = r.quotation_filename
+      ? `Última cotización: ${r.quotation_filename} — ${formatDate(r.quotation_sent_at)} (${r.quotation_email_status || 'pendiente'})`
+      : 'Aún no se ha enviado ninguna cotización.';
+    document.getElementById('quotationResendBtn').style.display = r.quotation_filename ? 'inline-block' : 'none';
+    openModal('quotationModal');
+  };
+
+  document.getElementById('quotationSubmitBtn').addEventListener('click', async function () {
+    const fileInput = document.getElementById('quotationFileInput');
+    if (!fileInput.files.length) {
+      showToast('Selecciona un archivo.', 'error');
+      return;
+    }
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+
+    try {
+      const res = await fetch(`/api/admin/requests/${currentQuotationId}/quotation`, { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.emailSent ? 'Cotización enviada por correo.' : 'Cotización guardada, pero falló el envío del correo.', data.emailSent ? 'success' : 'error');
+        closeModal('quotationModal');
+        fetchRequests();
+      } else {
+        showToast(data.error || 'Error al subir la cotización.', 'error');
+      }
+    } catch (err) {
+      showToast('Error de red al subir la cotización.', 'error');
+    }
+  });
+
+  document.getElementById('quotationResendBtn').addEventListener('click', async function () {
+    try {
+      const res = await fetch(`/api/admin/requests/${currentQuotationId}/quotation/resend`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.emailSent ? 'Correo reenviado.' : 'Falló el reenvío del correo.', data.emailSent ? 'success' : 'error');
+        closeModal('quotationModal');
+        fetchRequests();
+      } else {
+        showToast(data.error || 'Error al reenviar.', 'error');
+      }
+    } catch (err) {
+      showToast('Error de red al reenviar.', 'error');
+    }
+  });
 
   // ── Modal Helpers ──
   window.openModal = function (id) {

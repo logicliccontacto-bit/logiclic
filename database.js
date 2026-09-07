@@ -40,6 +40,14 @@ async function initDatabase() {
   `);
   console.log('Contact requests table ready');
 
+  // Cotización cargada por el admin fuera de la app + estado de su envío por correo
+  await pool.query(`ALTER TABLE contact_requests ADD COLUMN IF NOT EXISTS quotation_filename TEXT`);
+  await pool.query(`ALTER TABLE contact_requests ADD COLUMN IF NOT EXISTS quotation_mimetype TEXT`);
+  await pool.query(`ALTER TABLE contact_requests ADD COLUMN IF NOT EXISTS quotation_file BYTEA`);
+  await pool.query(`ALTER TABLE contact_requests ADD COLUMN IF NOT EXISTS quotation_sent_at TIMESTAMPTZ`);
+  await pool.query(`ALTER TABLE contact_requests ADD COLUMN IF NOT EXISTS quotation_email_status TEXT`);
+  console.log('Contact requests quotation columns ready');
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS casillero_requests (
       id SERIAL PRIMARY KEY,

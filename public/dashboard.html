@@ -89,12 +89,13 @@
                 <th>Email</th>
                 <th>Servicio</th>
                 <th>Estado</th>
+                <th>Cotización</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody id="tableBody">
               <tr>
-                <td colspan="7" class="text-center">Cargando solicitudes...</td>
+                <td colspan="8" class="text-center">Cargando solicitudes...</td>
               </tr>
             </tbody>
           </table>
@@ -376,6 +377,29 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal('editCasilleroModal')">Cancelar</button>
         <button class="btn btn-export" id="confirmEditBtn">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quotation Upload Modal -->
+  <div class="modal-overlay" id="quotationModal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3>Cargar cotización</h3>
+        <button class="modal-close" onclick="closeModal('quotationModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="quotationModalInfo" style="margin-bottom:1rem; color:#94a3b8;"></p>
+        <div class="modal-form-field">
+          <label for="quotationFileInput">Archivo de cotización (PDF, Word, Excel — máx. 8MB)</label>
+          <input type="file" id="quotationFileInput" class="form-input" accept=".pdf,.doc,.docx,.xls,.xlsx">
+        </div>
+        <p id="quotationStatusText" style="margin-top:0.8rem; font-size:0.85rem; color:#94a3b8;"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('quotationModal')">Cancelar</button>
+        <button class="btn btn-refresh" id="quotationResendBtn" style="display:none;">Reenviar correo</button>
+        <button class="btn btn-export" id="quotationSubmitBtn">Subir y enviar</button>
       </div>
     </div>
   </div>

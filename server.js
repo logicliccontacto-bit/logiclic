@@ -2,10 +2,31 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const crypto = require('crypto');
+const multer = require('multer');
 const { pool, hashPassword, initDatabase } = require('./database');
+const { sendQuotationEmail } = require('./mailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Cotizaciones: PDF/Word/Excel hasta 8MB, guardadas en memoria (se persisten en Postgres, no en disco)
+const QUOTATION_ALLOWED_MIMETYPES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+];
+const uploadQuotation = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!QUOTATION_ALLOWED_MIMETYPES.includes(file.mimetype)) {
+      return cb(new Error('Tipo de archivo no permitido. Usa PDF, Word o Excel.'));
+    }
+    cb(null, true);
+  }
+});
 
 // Sessions storage in memory (token -> username)
 const sessions = new Map();
@@ -235,7 +256,11 @@ app.get('/api/admin/check-session', requireAuth, (req, res) => {
 // 5. Fetch all contact requests (Protected)
 app.get('/api/admin/requests', requireAuth, async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT * FROM contact_requests ORDER BY created_at DESC');
+    const { rows } = await pool.query(
+      `SELECT id, name, email, phone, service, message, status, created_at,
+              quotation_filename, quotation_sent_at, quotation_email_status
+       FROM contact_requests ORDER BY created_at DESC`
+    );
     res.json({ success: true, requests: rows });
   } catch (err) {
     console.error('Error fetching requests:', err.message);
@@ -264,6 +289,85 @@ app.patch('/api/admin/requests/:id', requireAuth, async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error('Error updating status:', err.message);
+    res.status(500).json({ success: false, error: 'Database error' });
+  }
+});
+
+// 6b. Upload a quotation for a contact request and email it to the client + Logiclic (Protected)
+app.post('/api/admin/requests/:id/quotation', requireAuth, (req, res) => {
+  uploadQuotation.single('file')(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ success: false, error: err.message || 'Error al subir el archivo.' });
+    }
+    const { id } = req.params;
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'Selecciona un archivo.' });
+    }
+
+    try {
+      const upd = await pool.query(
+        `UPDATE contact_requests
+         SET quotation_filename = $1, quotation_mimetype = $2, quotation_file = $3,
+             quotation_sent_at = NOW(), quotation_email_status = NULL
+         WHERE id = $4 RETURNING email, name`,
+        [req.file.originalname, req.file.mimetype, req.file.buffer, id]
+      );
+      if (upd.rowCount === 0) {
+        return res.status(404).json({ success: false, error: 'Request not found' });
+      }
+      const { email, name } = upd.rows[0];
+
+      let emailSent = true;
+      try {
+        await sendQuotationEmail({ to: email, name, filename: req.file.originalname, mimetype: req.file.mimetype, buffer: req.file.buffer });
+      } catch (mailErr) {
+        emailSent = false;
+        console.error('Error sending quotation email:', mailErr.message);
+      }
+      await pool.query(
+        'UPDATE contact_requests SET quotation_email_status = $1 WHERE id = $2',
+        [emailSent ? 'enviado' : 'error', id]
+      );
+
+      res.json({ success: true, emailSent });
+    } catch (dbErr) {
+      console.error('Error saving quotation:', dbErr.message);
+      res.status(500).json({ success: false, error: 'Database error' });
+    }
+  });
+});
+
+// 6c. Resend the already-uploaded quotation email without re-uploading (Protected)
+app.post('/api/admin/requests/:id/quotation/resend', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { rows } = await pool.query(
+      'SELECT email, name, quotation_filename, quotation_mimetype, quotation_file FROM contact_requests WHERE id = $1',
+      [id]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Request not found' });
+    }
+    const r = rows[0];
+    if (!r.quotation_file) {
+      return res.status(400).json({ success: false, error: 'Esta solicitud no tiene una cotización cargada.' });
+    }
+
+    let emailSent = true;
+    try {
+      await sendQuotationEmail({ to: r.email, name: r.name, filename: r.quotation_filename, mimetype: r.quotation_mimetype, buffer: r.quotation_file });
+    } catch (mailErr) {
+      emailSent = false;
+      console.error('Error resending quotation email:', mailErr.message);
+    }
+    await pool.query(
+      'UPDATE contact_requests SET quotation_email_status = $1 WHERE id = $2',
+      [emailSent ? 'enviado' : 'error', id]
+    );
+
+    res.json({ success: true, emailSent });
+  } catch (err) {
+    console.error('Error resending quotation:', err.message);
     res.status(500).json({ success: false, error: 'Database error' });
   }
 });
