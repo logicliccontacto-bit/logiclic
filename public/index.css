@@ -409,9 +409,19 @@ footer{
 }
 .calc-accordion .quote-flow{max-width:none;margin:0}
 
+/* ── QUIÉNES SOMOS ── */
+.about-mv-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:900px;margin-top:1rem}
+.about-mv-card{
+  background:var(--card);border:1px solid var(--border);border-radius:16px;
+  padding:1.8rem;
+}
+.about-mv-card h3{font-family:var(--fh);font-size:1.1rem;font-weight:700;color:var(--blue2);margin-bottom:0.7rem}
+.about-mv-card p{color:var(--muted);font-size:0.9rem;line-height:1.65}
+
 @media(max-width:900px){
   .footer-top{grid-template-columns:1fr 1fr;gap:2rem}
   .pillars-intro-grid{grid-template-columns:1fr}
+  .about-mv-grid{grid-template-columns:1fr}
 }
 @media(max-width:600px){
   .footer-top{grid-template-columns:1fr;gap:2rem}
