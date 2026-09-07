@@ -318,10 +318,12 @@ app.post('/api/admin/requests/:id/quotation', requireAuth, (req, res) => {
       const { email, name } = upd.rows[0];
 
       let emailSent = true;
+      let emailError = null;
       try {
         await sendQuotationEmail({ to: email, name, filename: req.file.originalname, mimetype: req.file.mimetype, buffer: req.file.buffer });
       } catch (mailErr) {
         emailSent = false;
+        emailError = mailErr.message;
         console.error('Error sending quotation email:', mailErr.message);
       }
       await pool.query(
@@ -329,7 +331,7 @@ app.post('/api/admin/requests/:id/quotation', requireAuth, (req, res) => {
         [emailSent ? 'enviado' : 'error', id]
       );
 
-      res.json({ success: true, emailSent });
+      res.json({ success: true, emailSent, emailError });
     } catch (dbErr) {
       console.error('Error saving quotation:', dbErr.message);
       res.status(500).json({ success: false, error: 'Database error' });
@@ -354,10 +356,12 @@ app.post('/api/admin/requests/:id/quotation/resend', requireAuth, async (req, re
     }
 
     let emailSent = true;
+    let emailError = null;
     try {
       await sendQuotationEmail({ to: r.email, name: r.name, filename: r.quotation_filename, mimetype: r.quotation_mimetype, buffer: r.quotation_file });
     } catch (mailErr) {
       emailSent = false;
+      emailError = mailErr.message;
       console.error('Error resending quotation email:', mailErr.message);
     }
     await pool.query(
@@ -365,7 +369,7 @@ app.post('/api/admin/requests/:id/quotation/resend', requireAuth, async (req, re
       [emailSent ? 'enviado' : 'error', id]
     );
 
-    res.json({ success: true, emailSent });
+    res.json({ success: true, emailSent, emailError });
   } catch (err) {
     console.error('Error resending quotation:', err.message);
     res.status(500).json({ success: false, error: 'Database error' });

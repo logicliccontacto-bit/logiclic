@@ -28,9 +28,13 @@ async function sendQuotationEmail({ to, name, filename, mimetype, buffer }) {
     body: JSON.stringify(payload)
   });
 
-  const data = await res.json().catch(() => null);
+  const rawText = await res.text();
+  let data = null;
+  try { data = JSON.parse(rawText); } catch (e) { /* handled below */ }
+
   if (!res.ok || !data || data.success !== true) {
-    throw new Error(data && data.error ? data.error : 'Fallo al enviar correo');
+    const detail = data && data.error ? data.error : `HTTP ${res.status}, respuesta: ${rawText.slice(0, 300)}`;
+    throw new Error(`Fallo al enviar correo (${detail})`);
   }
 }
 
