@@ -448,13 +448,16 @@ footer{
 .mobile-menu a{color:var(--text2);text-decoration:none;font-size:1rem;font-weight:500;padding:0.5rem 0;border-bottom:1px solid var(--border);}
 .mobile-menu a:last-child{border-bottom:none;color:var(--blue2);}
 
-@media(max-width:640px){
-  nav{padding:0 4%;}
-  .nav-links{display:none}
-  .hamburger{display:flex}
-  .form-row{flex-direction:column}
-}
-@media(min-width:601px) and (max-width:900px){
+.nav-links a{white-space:nowrap}
+@media(max-width:1200px){
   .nav-links{gap:1.2rem}
   .nav-links a{font-size:0.8rem}
+}
+@media(max-width:1150px){
+  .nav-links{display:none}
+  .hamburger{display:flex}
+}
+@media(max-width:640px){
+  nav{padding:0 4%;}
+  .form-row{flex-direction:column}
 }
