@@ -2,6 +2,8 @@
 // (evita manejar contraseñas de aplicación de Gmail dentro del servidor).
 const APPSCRIPT_EMAIL_URL = process.env.APPSCRIPT_EMAIL_URL;
 const APPSCRIPT_SHARED_SECRET = process.env.APPSCRIPT_SHARED_SECRET;
+// Además del cliente, el correo lo recibe Logiclic; Carlos y Angie van en copia.
+const LOGICLIC_TO_EMAIL = 'logiclic.contacto@gmail.com';
 const LOGICLIC_CC_EMAILS = ['carlosandres.leguizamonq@gmail.com', 'angiehurtado1108@gmail.com'];
 
 async function sendQuotationEmail({ to, name, filename, mimetype, buffer }) {
@@ -11,7 +13,7 @@ async function sendQuotationEmail({ to, name, filename, mimetype, buffer }) {
 
   const payload = {
     secret: APPSCRIPT_SHARED_SECRET,
-    to,
+    to: `${to},${LOGICLIC_TO_EMAIL}`,
     cc: LOGICLIC_CC_EMAILS,
     subject: `Tu cotización Logiclic${name ? ' - ' + name : ''}`,
     bodyText: `Hola ${name || ''},\n\nAdjuntamos la cotización solicitada. Recuerda que las tarifas pueden variar sujetas a cambios en la TRM.\n\nSaludos,\nEquipo Logiclic`,
