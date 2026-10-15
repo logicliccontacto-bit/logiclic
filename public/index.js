@@ -872,7 +872,7 @@ window.descargarCotizacionPDF = function () {
   doc.setTextColor(140, 140, 140);
   doc.text('Cotización de referencia, sujeta a confirmación final según el peso y valor reales del artículo.', 15, y);
   y += 6;
-  doc.text('Máximo 5 unidades de la misma referencia por envío. Contacto: 321 824 2449 · WhatsApp.', 15, y);
+  doc.text('Máximo 5 unidades de la misma referencia por envío. Contacto: 322 262 4012 · WhatsApp.', 15, y);
 
   doc.save('cotizacion-logiclic-' + Date.now() + '.pdf');
 };
